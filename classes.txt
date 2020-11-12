@@ -1,0 +1,6 @@
+flashlight
+soda_can
+bowl
+cereal_box
+coffee_mug
+cap

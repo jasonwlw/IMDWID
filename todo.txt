@@ -1,0 +1,9 @@
+Get D-RISE script into repository
+
+Train Mask R-CNN on RGB+D Images; make sure to record training parameters
+
+Compare RGB+D to RGB to D (alone) images; RGB and D serve as baseline
+
+Apply D-RISE to RGB+D, RGB, and D predictions; compute average saliency maps per class, perform "smart augmentation"
+
+Is there a way to automate "smart augmentation"? i.e., take cropping of target box even when prediction was missed? These could be passed back to model for more training
