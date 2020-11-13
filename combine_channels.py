@@ -10,6 +10,7 @@ mat_files = []
 rgb_files = {}
 depth_files = {}
 create_rgbd = {}
+num = 0
 for root, dirs, files in os.walk(direc):
     for fold in dirs:
         path = os.path.join(root, fold)
@@ -37,6 +38,7 @@ for root, dirs, files in os.walk(direc):
                         save_path = os.path.join(os.path.abspath('./'), 'data', fil3.replace('_depth', '_combined').replace('.png',''))
                         
                         create_rgbd[save_path] = [rgb,dep]
+                        num += 1
                         #np.save(save_path, arr)
                         """
                         fil_save = os.path.split(mat_files[0])[1].split('.')[0]
@@ -46,7 +48,7 @@ for root, dirs, files in os.walk(direc):
                             print(fil_save+'_'+str(j)+'_combined')
                             assert 1 == 0
                         """
-ims = np.fromiter(create_rgbd.keys(), dtype = str)
+ims = np.fromiter(create_rgbd.keys(), dtype = str, count = num)
 print(type(ims))
 print(ims)
 print(ims[0])
