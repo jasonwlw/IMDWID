@@ -57,6 +57,7 @@ for key in create_rgbd:
     else:
         save_path.insert(save_path.index('data') + 1, 'val')
     save_path = os.path.join(*save_path)
+    print(save_path)
     rgb = cv2.imread(create_rgbd[key][0])
     dep = cv2.imread(create_rgbd[key][1], -1)
     arr = np.zeros((rgb.shape[0], rgb.shape[1], rgb.shape[2]+1))
