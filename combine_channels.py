@@ -46,7 +46,7 @@ for root, dirs, files in os.walk(direc):
                             print(fil_save+'_'+str(j)+'_combined')
                             assert 1 == 0
                         """
-ims = np.asarray(create_rgbd.keys())
+ims = np.fromiter(create_rgbd.keys(), dtype = str)
 print(type(ims))
 print(ims)
 print(ims[0])
