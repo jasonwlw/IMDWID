@@ -8,7 +8,7 @@ direc = 'rgbd-scenes'
 mat_files = []
 rgb_files = {}
 depth_files = {}
-train_or_test = {}
+create_rgbd = {}
 for root, dirs, files in os.walk(direc):
     for fold in dirs:
         path = os.path.join(root, fold)
