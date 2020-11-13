@@ -4,7 +4,7 @@ import cv2
 from scipy.io import loadmat
 from sklearn.model_selection import train_test_split
 
-direc = './rgbd-scenes'
+direc = '../rgbd-scenes'
 print(direc)
 mat_files = []
 rgb_files = {}
