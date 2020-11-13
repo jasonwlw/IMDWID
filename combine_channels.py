@@ -49,15 +49,9 @@ for root, dirs, files in os.walk(direc):
                             assert 1 == 0
                         """
 ims = np.fromiter(create_rgbd.keys(), dtype = 'S128', count = num)
-print(type(ims))
-print(ims)
-print(ims[0])
-print(type(ims[0]))
 train_ims, val_ims = train_test_split(ims, test_size = 0.2, random_state = 42)
 for key in create_rgbd:
-    print(key)
     save_path = key.split(os.sep)
-    print(save_path)
     if key in train_ims:
         save_path.insert(save_path.index('data') + 1, 'train')
     else:
@@ -65,7 +59,7 @@ for key in create_rgbd:
     save_path = os.path.join(*save_path)
     rgb = cv2.imread(create_rgbd[key][0])
     dep = cv2.imread(create_rgbd[key][1], -1)
-    arr = np.zeros((rgb.shape[0], rgb.shape[1], rgbd.shape[2]+1))
+    arr = np.zeros((rgb.shape[0], rgb.shape[1], rgb.shape[2]+1))
     arr[:,:,:3] = rgb
     arr[:,:,3] = dep
     np.save(save_path, arr)
