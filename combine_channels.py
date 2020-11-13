@@ -55,7 +55,9 @@ print(ims[0])
 print(type(ims[0]))
 train_ims, val_ims = train_test_split(ims, test_size = 0.2, random_state = 42)
 for key in create_rgbd:
+    print(key)
     save_path = key.split(os.sep)
+    print(save_path)
     if key in train_ims:
         save_path = save_path.insert(save_path.index('data') + 1, 'train')
     else:
