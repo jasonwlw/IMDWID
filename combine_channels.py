@@ -2,6 +2,7 @@ import os
 import numpy as np
 import cv2
 from scipy.io import loadmat
+from sklearn.model_selection import train_test_split
 
 direc = 'rgbd-scenes'
 mat_files = []
@@ -21,26 +22,21 @@ for root, dirs, files in os.walk(direc):
                 path2 = os.path.join(root2, fold2)
                 for fil3 in os.listdir(path2):
                     if 'depth' in fil3:
-                        rgb = fil3.replace('_depth','')
-                        rgb = cv2.imread(os.path.join(path2, rgb))
-                        depth = cv2.imread(os.path.join(path2, fil3), -1)
+                        dep = os.path.join(path2, fil3)
+                        rgb = dep.replace('_depth','')
+                        #rgb = cv2.imread(os.path.join(path2, rgb))
+                        #depth = cv2.imread(os.path.join(path2, fil3), -1)
                         
-                        arr = np.zeros((rgb.shape[0], rgb.shape[1], rgb.shape[2]+1))
-                        arr[:,:,:3] = rgb
-                        arr[:,:,3] = depth
-                        num = np.random.randint(1,101)
+                        #arr = np.zeros((rgb.shape[0], rgb.shape[1], rgb.shape[2]+1))
+                        #arr[:,:,:3] = rgb
+                        #arr[:,:,3] = depth
                         #print(fil3.replace('_depth','_combined').replace('.png', ''))
-                        if num > 85:
-                            root_path = '/home/witryjw/data/val/'
-                            train_or_test[fil3.replace('_depth', '_combined').replace('.png','')] = 'val'
-                        elif num > 70:
-                            root_path = '/home/witryjw/data/test/'
-                            train_or_test[fil3.replace('_depth', '_combined').replace('.png','')] = 'test'
-                        else:
-                            root_path = '/home/witryjw/data/train/'
-                            train_or_test[fil3.replace('_depth', '_combined').replace('.png','')] = 'train'
-                        save_path = os.path.join(root_path, fil3.replace('_depth', '_combined').replace('.png',''))
-                        np.save(save_path, arr)
+
+                        #save_path = os.path.join(root_path, fil3.replace('_depth', '_combined').replace('.png',''))
+                        save_path = os.path.join(os.path.abspath('./'), 'data', fil3.replace('_depth', '_combined').replace('.png',''))
+                        
+                        create_rgbd[save_path] = [rgb,dep]
+                        #np.save(save_path, arr)
                         """
                         fil_save = os.path.split(mat_files[0])[1].split('.')[0]
                         annot = {}
@@ -49,8 +45,21 @@ for root, dirs, files in os.walk(direc):
                             print(fil_save+'_'+str(j)+'_combined')
                             assert 1 == 0
                         """
-                        
-                        
+ims = create_rgbd.keys()
+train_ims, val_ims = train_test_split(ims, test_size = 0.2, random_state = 42)
+for key in create_rgbd:
+    save_path = key.split(os.sep)
+    if key in train_ims:
+        save_path = save_path.insert(save_path.index('data') + 1, 'train')
+    else:
+        save_path = save_path.insert(save_path.index('data') + 1, 'val')
+    save_path = os.path.join(*save_path)
+    rgb = cv2.imread(create_rgbd[key][0])
+    dep = cv2.imread(create_rgbd[key][1], -1)
+    arr = np.zeros((rgb.shape[0], rgb.shape[1], rgbd.shape[2]+1))
+    arr[:,:,:3] = rgb
+    arr[:,:,3] = dep
+    np.save(save_path, arr)
 
 annot = {}
 width = 640
