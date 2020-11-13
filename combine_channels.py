@@ -59,9 +59,9 @@ for key in create_rgbd:
     save_path = key.split(os.sep)
     print(save_path)
     if key in train_ims:
-        save_path = save_path.insert(save_path.index('data') + 1, 'train')
+        save_path.insert(save_path.index('data') + 1, 'train')
     else:
-        save_path = save_path.insert(save_path.index('data') + 1, 'val')
+        save_path.insert(save_path.index('data') + 1, 'val')
     save_path = os.path.join(*save_path)
     rgb = cv2.imread(create_rgbd[key][0])
     dep = cv2.imread(create_rgbd[key][1], -1)
