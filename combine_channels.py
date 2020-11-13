@@ -47,6 +47,7 @@ for root, dirs, files in os.walk(direc):
                             assert 1 == 0
                         """
 ims = np.asarray(create_rgbd.keys())
+print(type(ims))
 train_ims, val_ims = train_test_split(ims, test_size = 0.2, random_state = 42)
 for key in create_rgbd:
     save_path = key.split(os.sep)
