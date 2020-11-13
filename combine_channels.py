@@ -48,6 +48,8 @@ for root, dirs, files in os.walk(direc):
                         """
 ims = np.asarray(create_rgbd.keys())
 print(type(ims))
+print(ims[0])
+print(type(ims[0]))
 train_ims, val_ims = train_test_split(ims, test_size = 0.2, random_state = 42)
 for key in create_rgbd:
     save_path = key.split(os.sep)
