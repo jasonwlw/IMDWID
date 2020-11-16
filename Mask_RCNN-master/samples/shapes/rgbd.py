@@ -80,7 +80,7 @@ class RGBDDataset(utils.Dataset):
         """
 
         # Add classes
-        with open('classes.txt', 'r') as f0:
+        with open(os.path.join(ROOT_DIR, '../classes.txt', 'r')) as f0:
             for i,line in enumerate(f0.readlines()):
                 line = line.strip()
                 self.add_class("rgbd", i+1, line) 
