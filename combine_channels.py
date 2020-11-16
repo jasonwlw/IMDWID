@@ -51,6 +51,7 @@ for root, dirs, files in os.walk(direc):
 ims = np.fromiter(create_rgbd.keys(), dtype = 'S128', count = num)
 train_ims, val_ims = train_test_split(ims, test_size = 0.2, random_state = 42)
 print(ims[0])
+print(train_ims[0])
 """
 for key in create_rgbd:
     #save 4d images
@@ -73,11 +74,18 @@ annot = {}
 width = 640
 height = 480
 clses = []
+root_dir = os.path.join(os.path.abs('./'), 'data')
 for i,fil in enumerate(mat_files):
     fil_save = os.path.split(fil)[1].split('.')[0]
+    save_path = os.path.join(root_dir, fil_save).split(os.sep)
+    if os.path.join(root_dir,fil_save) in train_ims:
+        save_path.insert(save_path.index('data') + 1, 'train')
+    else:
+        save_path.insert(save_path.index('data') + 1, 'val')
+    print(os.path.join(*save_path))
+
     loadmat(fil, mdict = annot)
     for j,frame in enumerate(annot['bboxes'][0]):
-        save_path = fil_save+'_'+str(j+1)
         print(save_path)
         assert 1 == 0
         if split == 'val':
