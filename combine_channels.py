@@ -53,7 +53,7 @@ train_ims, val_ims = train_test_split(ims, test_size = 0.2, random_state = 42)
 ims = [im.decode('UTF-8') for im in ims]
 train_ims = [im.decode('UTF-8') for im in train_ims]
 val_ims = [im.decode('UTF-8') for im in val_ims]
-
+"""
 for key in create_rgbd:
     #save 4d images
     save_path = key.split(os.sep)
@@ -70,7 +70,7 @@ for key in create_rgbd:
     arr[:,:,:3] = rgb
     arr[:,:,3] = dep
     np.save(save_path, arr)
-
+"""
 
 annot = {}
 width = 640
@@ -99,6 +99,7 @@ for i,fil in enumerate(mat_files):
 
         #print(os.path.join('/',*save_path))
         #print(save_path)
+        save_path = os.path.join('/',*save_path)
         save_path += '.npy'
 
 
@@ -121,6 +122,7 @@ for i,fil in enumerate(mat_files):
             im_classes.append(cls)
             mask[left:right, bottom:top, k] = 1
         #save_path = impath.replace('combined', 'masks')
+        print(save_path)
         np.save(save_path, mask)
         save_path = save_path.replace('gt', 'classes').replace('.npy','.txt')
         with open(save_path, 'w+') as f0:
