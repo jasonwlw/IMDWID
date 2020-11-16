@@ -83,24 +83,25 @@ clses = []
 root_dir = os.path.join(os.path.abspath('./'), 'data')
 for i,fil in enumerate(mat_files):
     fil_save = os.path.split(fil)[1].split('.')[0]
-    save_path = os.path.join(root_dir, fil_save).split(os.sep)
-    if os.path.join('/',root_dir,fil_save) in train_ims:
-        save_path.insert(save_path.index('data') + 1, 'train')
-    elif os.path.join('/',root_dir,fil_save) in val_ims:
-        save_path.insert(save_path.index('data') + 1, 'val')
-    else:
-        print("WTF")
-        print("Val", val_ims)
-        print("train", train_ims)
-        print(os.path.join('/',root_dir,fil_save))
-        print(type(os.path.join('/',root_dir,fil_save)))
-        print(type(val_ims[0]))
-        print(type(train_ims[0]))
-
-    print(os.path.join(*save_path))
 
     loadmat(fil, mdict = annot)
     for j,frame in enumerate(annot['bboxes'][0]):
+        fil_save_frame = fil_save + '_' + str(j+1) + '_combined'
+        save_path = os.path.join(root_dir, fil_save_frame).split(os.sep)
+        if os.path.join('/',root_dir,fil_save_frame) in train_ims:
+            save_path.insert(save_path.index('data') + 1, 'train')
+        elif os.path.join('/',root_dir,fil_save_frame) in val_ims:
+            save_path.insert(save_path.index('data') + 1, 'val')
+        else:
+            print("WTF")
+            print("Val", val_ims)
+            print("train", train_ims)
+            print(os.path.join('/',root_dir,fil_save))
+            print(type(os.path.join('/',root_dir,fil_save)))
+            print(type(val_ims[0]))
+            print(type(train_ims[0]))
+
+        print(os.path.join(*save_path))
         print(save_path)
         assert 1 == 0
         if split == 'val':
