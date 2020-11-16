@@ -50,6 +50,7 @@ for root, dirs, files in os.walk(direc):
                         """
 ims = np.fromiter(create_rgbd.keys(), dtype = 'S128', count = num)
 train_ims, val_ims = train_test_split(ims, test_size = 0.2, random_state = 42)
+ims = [im.decode('UTF-8') for im in ims]
 train_ims = [im.decode('UTF-8') for im in train_ims]
 val_ims = [im.decode('UTF-8') for im in val_ims]
 print(ims[0])
@@ -58,6 +59,8 @@ if ims[0] in train_ims:
     print("HERE")
 elif ims[0] in val_ims:
     print("HERE")
+
+assert 1 == 0
 """
 for key in create_rgbd:
     #save 4d images
@@ -93,7 +96,7 @@ for i,fil in enumerate(mat_files):
         elif os.path.join('/',root_dir,fil_save_frame) in val_ims:
             save_path.insert(save_path.index('data') + 1, 'val')
         else:
-            print("WTF")
+            print("Something is wrong")
             print("Val", val_ims)
             print("train", train_ims)
             print(os.path.join('/',root_dir,fil_save))
