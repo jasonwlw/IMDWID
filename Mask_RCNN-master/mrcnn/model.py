@@ -17,7 +17,7 @@ from collections import OrderedDict
 import multiprocessing
 import numpy as np
 import tensorflow as tf
-print("Using TF version:", tf.__version__)
+#print("Using TF version:", tf.__version__)
 import keras
 import keras.backend as K
 import keras.layers as KL
