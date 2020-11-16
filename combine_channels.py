@@ -54,6 +54,7 @@ ims = [im.decode('UTF-8') for im in ims]
 train_ims = [im.decode('UTF-8') for im in train_ims]
 val_ims = [im.decode('UTF-8') for im in val_ims]
 
+"""
 for key in create_rgbd:
     #save 4d images
     save_path = key.split(os.sep)
@@ -70,6 +71,7 @@ for key in create_rgbd:
     arr[:,:,:3] = rgb
     arr[:,:,3] = dep
     np.save(save_path, arr)
+"""
 
 
 annot = {}
