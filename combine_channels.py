@@ -52,6 +52,10 @@ ims = np.fromiter(create_rgbd.keys(), dtype = 'S128', count = num)
 train_ims, val_ims = train_test_split(ims, test_size = 0.2, random_state = 42)
 print(ims[0])
 print(train_ims[0])
+if ims[0] in train_ims:
+    print("HERE")
+elif ims[0] in val_ims:
+    print("HERE")
 """
 for key in create_rgbd:
     #save 4d images
@@ -74,14 +78,20 @@ annot = {}
 width = 640
 height = 480
 clses = []
-root_dir = os.path.join(os.path.abs('./'), 'data')
+root_dir = os.path.join(os.path.abspath('./'), 'data')
 for i,fil in enumerate(mat_files):
     fil_save = os.path.split(fil)[1].split('.')[0]
     save_path = os.path.join(root_dir, fil_save).split(os.sep)
     if os.path.join(root_dir,fil_save) in train_ims:
         save_path.insert(save_path.index('data') + 1, 'train')
-    else:
+    elif os.path.join(root_dir,fil_save) in val_ims:
         save_path.insert(save_path.index('data') + 1, 'val')
+    else:
+        print("WTF")
+        print("Val", val_ims)
+        print("train", train_ims)
+        print(os.path.join(root_dir,fil_save))
+
     print(os.path.join(*save_path))
 
     loadmat(fil, mdict = annot)
