@@ -147,6 +147,7 @@ class RGBDDataset(utils.Dataset):
         """
         info = self.image_info[image_id]
         image = np.load(info['path'])
+        image = image.astype(np.uint8)
         return image
 
     def image_reference(self, image_id):
