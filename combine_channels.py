@@ -54,7 +54,6 @@ ims = [im.decode('UTF-8') for im in ims]
 train_ims = [im.decode('UTF-8') for im in train_ims]
 val_ims = [im.decode('UTF-8') for im in val_ims]
 
-"""
 for key in create_rgbd:
     #save 4d images
     save_path = key.split(os.sep)
@@ -71,7 +70,6 @@ for key in create_rgbd:
     arr[:,:,:3] = rgb
     arr[:,:,3] = dep
     np.save(save_path, arr)
-"""
 
 
 annot = {}
@@ -99,17 +97,9 @@ for i,fil in enumerate(mat_files):
             print(type(val_ims[0]))
             print(type(train_ims[0]))
 
-        print(os.path.join('/',*save_path))
-        print(save_path)
-        assert 1 == 0
-        if split == 'val':
-            impath = os.path.join('./data/val/', fil_save+'_'+str(j+1)+'_combined.npy')
-        elif split == 'train':
-            impath = os.path.join('./data/train/', fil_save+'_'+str(j+1)+'_combined.npy')
-        elif split == 'test':
-            impath = os.path.join('./data/test/', fil_save+'_'+str(j+1)+'_combined.npy')
-        else:
-            print("UHHHH")
+        #print(os.path.join('/',*save_path))
+        #print(save_path)
+        save_path += '.npy'
 
 
         mask = np.zeros((width, height, len(frame[0])))
@@ -124,15 +114,15 @@ for i,fil in enumerate(mat_files):
                 clses.append(cls)
             # top bottom left right
 
-            top = annotation[2][0][0]
-            bottom = annotation[3][0][0]
+            bottom = annotation[2][0][0]
+            top = annotation[3][0][0]
             left = annotation[4][0][0]
             right = annotation[5][0][0]
             im_classes.append(cls)
             mask[left:right, bottom:top, k] = 1
-        save_path = impath.replace('combined', 'masks')
+        #save_path = impath.replace('combined', 'masks')
         np.save(save_path, mask)
-        save_path = save_path.replace('masks', 'classes').replace('.npy','.txt')
+        save_path = save_path.replace('gt', 'classes').replace('.npy','.txt')
         with open(save_path, 'w+') as f0:
             for cls in im_classes:
                 f0.write(cls+'\n')
