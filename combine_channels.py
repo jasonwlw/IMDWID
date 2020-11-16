@@ -82,9 +82,9 @@ root_dir = os.path.join(os.path.abspath('./'), 'data')
 for i,fil in enumerate(mat_files):
     fil_save = os.path.split(fil)[1].split('.')[0]
     save_path = os.path.join(root_dir, fil_save).split(os.sep)
-    if os.path.join('/',root_dir,fil_save) in train_ims:
+    if np.fromstring(os.path.join('/',root_dir,fil_save), dtype='S128') in train_ims:
         save_path.insert(save_path.index('data') + 1, 'train')
-    elif os.path.join('/',root_dir,fil_save) in val_ims:
+    elif np.fromstring(os.path.join('/',root_dir,fil_save), dtype='S128') in val_ims:
         save_path.insert(save_path.index('data') + 1, 'val')
     else:
         print("WTF")
