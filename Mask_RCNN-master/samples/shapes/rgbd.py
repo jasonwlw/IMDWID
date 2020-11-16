@@ -95,7 +95,7 @@ class RGBDDataset(utils.Dataset):
         
         for im in os.listdir(data_dir):
             if 'combined' in im:
-                mask_path = os.path.join(data_dir, im.replace('combined', 'masks'))
+                mask_path = os.path.join(data_dir, im.replace('combined', 'gt'))
                 class_path = os.path.join(data_dir, im.replace('combined', 'classes').replace('.npy','.txt'))
                 self.add_image("rgbd", image_id = ids, path = os.path.join(data_dir, im), width = width, height = height, mask_path = mask_path, class_path = class_path)
                 ids += 1
