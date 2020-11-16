@@ -109,6 +109,7 @@ class RGBDDataset(utils.Dataset):
             bckgnd = True
             mask = np.zeros((self.width, self.height,1))
         else:
+            print(info['mask_path')
             print("Error; mask path does not exist and is not background image")
 
         classes = []
