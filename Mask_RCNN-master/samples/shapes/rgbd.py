@@ -107,7 +107,7 @@ class RGBDDataset(utils.Dataset):
             mask = np.load(info['mask_path'])
         elif 'background' in info['mask_path']:
             bckgnd = True
-            mask = np.zeros(self.width, self.height,1)
+            mask = np.zeros((self.width, self.height,1))
         else:
             print("Error; mask path does not exist and is not background image")
 
