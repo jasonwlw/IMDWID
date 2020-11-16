@@ -87,12 +87,12 @@ Extend the Dataset class and add a method to load the shapes dataset, `load_shap
 # %%
 # Training dataset
 dataset_train = RGBDDataset()
-dataset_train.load_images('/home/witryjw/data/train/', config.IMAGE_SHAPE[0], config.IMAGE_SHAPE[1])
+dataset_train.load_images(os.path.join(ROOT_DIR, '../data/train/'), config.IMAGE_SHAPE[0], config.IMAGE_SHAPE[1])
 dataset_train.prepare()
 
 # Validation dataset
 dataset_val = RGBDDataset()
-dataset_val.load_images('/home/witryjw/data/val/', config.IMAGE_SHAPE[0], config.IMAGE_SHAPE[1])
+dataset_val.load_images(os.path.join(ROOT_DIR, '../data/train/'), config.IMAGE_SHAPE[0], config.IMAGE_SHAPE[1])
 dataset_val.prepare()
 
 # %%
@@ -155,11 +155,12 @@ model.train(dataset_train, dataset_val,
 # Passing layers="all" trains all layers. You can also 
 # pass a regular expression to select which layers to
 # train by name pattern.
+"""
 model.train(dataset_train, dataset_val, 
             learning_rate=config.LEARNING_RATE / 10,
             epochs=2, 
             layers="all")
-
+"""
 # %%
 # Save weights
 # Typically not needed because callbacks save after every epoch
