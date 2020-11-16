@@ -50,6 +50,8 @@ for root, dirs, files in os.walk(direc):
                         """
 ims = np.fromiter(create_rgbd.keys(), dtype = 'S128', count = num)
 train_ims, val_ims = train_test_split(ims, test_size = 0.2, random_state = 42)
+train_ims = [im.decode('UTF-8') for im in train_ims]
+val_ims = [im.decode('UTF-8') for im in val_ims]
 print(ims[0])
 print(train_ims[0])
 if ims[0] in train_ims:
@@ -82,9 +84,9 @@ root_dir = os.path.join(os.path.abspath('./'), 'data')
 for i,fil in enumerate(mat_files):
     fil_save = os.path.split(fil)[1].split('.')[0]
     save_path = os.path.join(root_dir, fil_save).split(os.sep)
-    if np.fromstring(os.path.join('/',root_dir,fil_save), dtype='S128',count=1) in train_ims:
+    if os.path.join('/',root_dir,fil_save) in train_ims:
         save_path.insert(save_path.index('data') + 1, 'train')
-    elif np.fromstring(os.path.join('/',root_dir,fil_save), dtype='S128', count=1) in val_ims:
+    elif os.path.join('/',root_dir,fil_save) in val_ims:
         save_path.insert(save_path.index('data') + 1, 'val')
     else:
         print("WTF")
