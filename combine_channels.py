@@ -53,15 +53,7 @@ train_ims, val_ims = train_test_split(ims, test_size = 0.2, random_state = 42)
 ims = [im.decode('UTF-8') for im in ims]
 train_ims = [im.decode('UTF-8') for im in train_ims]
 val_ims = [im.decode('UTF-8') for im in val_ims]
-print(ims[0])
-print(train_ims[0])
-if ims[0] in train_ims:
-    print("HERE")
-elif ims[0] in val_ims:
-    print("HERE")
 
-assert 1 == 0
-"""
 for key in create_rgbd:
     #save 4d images
     save_path = key.split(os.sep)
@@ -78,7 +70,8 @@ for key in create_rgbd:
     arr[:,:,:3] = rgb
     arr[:,:,3] = dep
     np.save(save_path, arr)
-"""
+
+
 annot = {}
 width = 640
 height = 480
