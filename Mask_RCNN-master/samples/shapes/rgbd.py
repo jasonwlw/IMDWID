@@ -47,6 +47,7 @@ class RGBDConfig(Config):
     IMAGE_MIN_DIM = 480
     IMAGE_MAX_DIM = 640
 
+
     # Use smaller anchors because our image and objects are small
     RPN_ANCHOR_SCALES = (8, 16, 32, 64, 128)  # anchor side in pixels
 

@@ -145,11 +145,12 @@ Train in two stages:
 # Passing layers="heads" freezes all layers except the head
 # layers. You can also pass a regular expression to select
 # which layers to train by name pattern.
+"""
 model.train(dataset_train, dataset_val, 
             learning_rate=config.LEARNING_RATE, 
             epochs=1, 
             layers='heads')
-
+"""
 # %%
 # Fine tune all layers
 # Passing layers="all" trains all layers. You can also 
@@ -177,6 +178,8 @@ model.train(dataset_train, dataset_val,
 class InferenceConfig(RGBDConfig):
     GPU_COUNT = 1
     IMAGES_PER_GPU = 1
+    IMAGE_MIN_DIM = 480
+    IMAGE_MAX_DIM = 640
 
 inference_config = InferenceConfig()
 
