@@ -85,7 +85,7 @@ for i,fil in enumerate(mat_files):
     loadmat(fil, mdict = annot)
     for j,frame in enumerate(annot['bboxes'][0]):
         fil_save_frame = fil_save + '_' + str(j+1) + '_combined'
-        save_path = os.path.join(root_dir, fil_save_frame).split(os.sep)
+        save_path = os.path.join(root_dir, fil_save_frame.replace('_combined','_gt')).split(os.sep)
         if os.path.join('/',root_dir,fil_save_frame) in train_ims:
             save_path.insert(save_path.index('data') + 1, 'train')
         elif os.path.join('/',root_dir,fil_save_frame) in val_ims:
@@ -99,7 +99,7 @@ for i,fil in enumerate(mat_files):
             print(type(val_ims[0]))
             print(type(train_ims[0]))
 
-        print(os.path.join(*save_path))
+        print(os.path.join('/',*save_path))
         print(save_path)
         assert 1 == 0
         if split == 'val':
