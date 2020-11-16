@@ -90,6 +90,8 @@ class RGBDDataset(utils.Dataset):
         # list of rgbd sizes and locations). This is more compact than
         # actual images. Images are generated on the fly in load_image().
         ids = 0
+        self.width = width
+        self.height = height
         
         for im in os.listdir(data_dir):
             if 'combined' in im:
@@ -99,12 +101,21 @@ class RGBDDataset(utils.Dataset):
                 ids += 1
 
     def load_mask(self, image_id):
+        bckgnd = False
         info = self.image_info[image_id]
-        mask = np.load(info['mask_path'])
+        if os.path.exists(info['mask_path']):
+            mask = np.load(info['mask_path'])
+        elif 'background' in info['mask_path']:
+            bckgnd = True
+            mask = np.zeros(self.width, self.height,1)
+        else:
+            print("Error; mask path does not exist and is not background image")
+
         classes = []
-        with open(info['class_path'], 'r') as f0:
-            for line in f0.readlines():
-                classes.append(line.strip())
+        if not bckgnd:
+            with open(info['class_path'], 'r') as f0:
+                for line in f0.readlines():
+                    classes.append(line.strip())
         # Handle occlusions
         count = mask.shape[2]
         if count > 1:
@@ -119,7 +130,10 @@ class RGBDDataset(utils.Dataset):
         else:
             # Handle empty image?
             pass
-        class_ids = np.array([self.class_names.index(s) for s in classes])
+        if not bckgnd:
+            class_ids = np.array([self.class_names.index(s) for s in classes])
+        else:
+            class_ids = np.array([])
         return mask, class_ids.astype(np.int32)
 
 
