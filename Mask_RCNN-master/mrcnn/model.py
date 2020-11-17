@@ -1216,6 +1216,7 @@ def load_image_gt(dataset, config, image_id, augment=False, augmentation=None,
     print(mask.shape)
     print(config.IMAGE_MIN_DIM)
     print(config.IMAGE_MAX_DIM)
+    mask = mask.transpose((1,0,2))
     original_shape = image.shape
     image, window, scale, padding, crop = utils.resize_image(
         image,

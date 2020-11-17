@@ -103,7 +103,7 @@ for i,fil in enumerate(mat_files):
         save_path += '.npy'
 
 
-        mask = np.zeros((width, height, len(frame[0])))
+        mask = np.zeros((height, width, len(frame[0])))
         im_classes = []
         for k,annotation in enumerate(frame[0]):
             #print(impath)
