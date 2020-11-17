@@ -147,8 +147,9 @@ Train in two stages:
 # which layers to train by name pattern.
 model.train(dataset_train, dataset_val, 
             learning_rate=config.LEARNING_RATE, 
-            epochs=10, 
-            layers='heads')
+            epochs=5, 
+            layers='heads',
+            augmentation = imgaug.augmenters.Crop(percent=(0,0.1)))
 # %%
 # Fine tune all layers
 # Passing layers="all" trains all layers. You can also 
