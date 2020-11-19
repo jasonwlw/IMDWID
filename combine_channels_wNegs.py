@@ -74,11 +74,10 @@ for i,key in tqdm(enumerate(create_rgbd), desc="Creating 4D Images"):
     if not os.path.exists(os.path.split(save_path)[0]):
         os.makedirs(os.path.split(save_path)[0])
     if 'background' in save_path:
-        continue
-        #np.save(save_path, arr)
-        #np.save(save_path.replace('_combined', '_gt'), np.zeros((height,width,1)))
-        #with open(save_path.replace('_combined', '_classes') + '.txt', 'w+') as f0:
-            #f0.write('None\n')
+        np.save(save_path, arr)
+        np.save(save_path.replace('_combined', '_gt'), np.zeros((height,width,1)))
+        with open(save_path.replace('_combined', '_classes') + '.txt', 'w+') as f0:
+            f0.write('None\n')
     else:
         np.save(save_path, arr)
 
@@ -110,10 +109,8 @@ for i,fil in tqdm(enumerate(mat_files), desc="Reading .mat files"):
         save_path += '.npy'
 
         if len(frame[0]) == 0:
-            #mask = np.zeros((height, width, 1))
-            #im_classes = ['None']
-            os.remove(save_path.replace('_gt','_combined'))
-            continue
+            mask = np.zeros((height, width, 1))
+            im_classes = ['None']
         else:
             mask = np.zeros((height, width, len(frame[0])))
             # Loop through detections
