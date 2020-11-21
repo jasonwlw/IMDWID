@@ -32,6 +32,7 @@ import mrcnn.model as modellib
 from mrcnn import visualize
 from mrcnn.model import log
 
+os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 
 # Directory to save logs and trained model
 MODEL_DIR = os.path.join(ROOT_DIR, "logs")
@@ -41,6 +42,8 @@ COCO_MODEL_PATH = os.path.join(ROOT_DIR, "mask_rcnn_coco.h5")
 # Download COCO trained weights from Releases if needed
 if not os.path.exists(COCO_MODEL_PATH):
     utils.download_trained_weights(COCO_MODEL_PATH)
+
+
 
 # %%
 """
@@ -146,11 +149,16 @@ Train in two stages:
 # Passing layers="heads" freezes all layers except the head
 # layers. You can also pass a regular expression to select
 # which layers to train by name pattern.
-model.train(dataset_train, dataset_val, 
-            learning_rate=config.LEARNING_RATE, 
-            epochs=5, 
-            layers='heads',
-            augmentation = imgaug.augmenters.Crop(percent=(0,0.1)))
+#model.train(dataset_train, dataset_val, 
+            #learning_rate=config.LEARNING_RATE, 
+            #epochs=5, 
+            #layers='heads')
+
+#model.train(dataset_train, dataset_val, 
+            #learning_rate=config.LEARNING_RATE, 
+            #epochs=5, 
+            #layers='heads',
+            #augmentation = imgaug.augmenters.Crop(percent=(0,0.1)))
 # %%
 # Fine tune all layers
 # Passing layers="all" trains all layers. You can also 
@@ -193,7 +201,7 @@ model = modellib.MaskRCNN(mode="inference",
 # model_path = os.path.join(ROOT_DIR, ".h5 file name here")
 model_path = model.find_last()
 
-# Load trained weights
+# oad trained weights
 print("Loading weights from ", model_path)
 model.load_weights(model_path, by_name=True)
 

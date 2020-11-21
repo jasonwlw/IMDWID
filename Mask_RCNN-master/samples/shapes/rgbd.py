@@ -59,7 +59,7 @@ class RGBDConfig(Config):
     STEPS_PER_EPOCH = 100
 
     # use small validation steps since the epoch is small
-    VALIDATION_STEPS = 5
+    VALIDATION_STEPS = 10
 
     # RGB-D num channels
     IMAGE_CHANNEL_COUNT = 4
@@ -102,22 +102,17 @@ class RGBDDataset(utils.Dataset):
                 ids += 1
 
     def load_mask(self, image_id):
-        bckgnd = False
         info = self.image_info[image_id]
         if os.path.exists(info['mask_path']):
             mask = np.load(info['mask_path'])
-        elif 'background' in info['mask_path']:
-            bckgnd = True
-            mask = np.zeros((self.width, self.height,1))
         else:
             print(info['mask_path'])
             print("Error; mask path does not exist and is not background image")
 
         classes = []
-        if not bckgnd:
-            with open(info['class_path'], 'r') as f0:
-                for line in f0.readlines():
-                    classes.append(line.strip())
+        with open(info['class_path'], 'r') as f0:
+            for line in f0.readlines():
+                classes.append(line.strip())
         # Handle occlusions
         count = mask.shape[2]
         if count > 1:
@@ -132,10 +127,11 @@ class RGBDDataset(utils.Dataset):
         else:
             # Handle empty image?
             pass
-        if not bckgnd:
+        if classes[0] != 'None':
             class_ids = np.array([self.class_names.index(s) for s in classes])
         else:
-            class_ids = np.array([])
+            class_ids = np.empty([0], np.int32)
+            mask = np.empty([0,0,0,0])
         return mask, class_ids.astype(np.int32)
 
 

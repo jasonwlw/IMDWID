@@ -18,7 +18,7 @@ from skimage.measure import find_contours
 import matplotlib.pyplot as plt
 from matplotlib import patches,  lines
 from matplotlib.patches import Polygon
-import IPython.display
+#import IPython.display
 
 # Root directory of the project
 ROOT_DIR = os.path.abspath("../")
@@ -469,7 +469,7 @@ def display_table(table):
             row_html += "<td>{:40}</td>".format(str(col))
         html += "<tr>" + row_html + "</tr>"
     html = "<table>" + html + "</table>"
-    IPython.display.display(IPython.display.HTML(html))
+    #IPython.display.display(IPython.display.HTML(html))
 
 
 def display_weight_stats(model):
