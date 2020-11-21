@@ -1,1 +1,27 @@
-Fix data association; should be in IMDWID Directory
+(done) Fix data association; should be in IMDWID Directory
+
+(done) Add tqdm progress bar to combine_channels.py; clean up combine_channels.py
+
+Add imgaug to requirements file; issue with loading module after installing requirements
+
+Either add IPython installation (mrcnn/visualize) or keep code commented out
+
+Installed cudNN 7.6; Cuda 10.0.0
+
+https://medium.com/@praveenkrishna/downgrade-cuda-for-tensorflow-gpu-17831db59099
+
+Inference is not working; probably image shape in config; masks are 800x480?
+
+2226 is aug? Look for latest timestamp
+
+TODO:
+
+Add D-RISE
+
+Enable prediction saliency maps
+
+Add conv1 to training!
+
+Image type bool warning??
+
+
