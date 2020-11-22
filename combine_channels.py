@@ -6,6 +6,7 @@ from sklearn.model_selection import train_test_split
 from tqdm import tqdm
 
 direc = './rgbd-scenes'
+save_csv = './rgbd-dataset.csv'
 print(direc)
 mat_files = []
 rgb_files = {}
@@ -134,6 +135,9 @@ for i,fil in tqdm(enumerate(mat_files), desc="Reading .mat files"):
                 right = annotation[5][0][0]
                 im_classes.append(cls)
                 mask[left:right, bottom:top, k] = 1
+                with open('rgbd-dataset.csv', 'a') as f0:
+                    f0.write(save_path.replace('gt','combined') + ',' + str(left) + ',' + str(bottom) + ',' + str(right) + ',' + str(top)+ ',' + cls)
+
         #save_path = impath.replace('combined', 'masks')
         #print(save_path)
         np.save(save_path, mask)
