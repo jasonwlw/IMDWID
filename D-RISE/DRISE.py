@@ -2,7 +2,7 @@ import numpy as np
 import os
 from sklearn.preprocessing import OneHotEncoder
 from csv_dataset import CsvDataset
-
+import sys
 ROOT_DIR = os.path.abspath('../Mask_RCNN/')
 
 sys.path.append(ROOT_DIR)
