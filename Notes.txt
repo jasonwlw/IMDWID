@@ -24,4 +24,6 @@ Add conv1 to training!
 
 Image type bool warning??
 
+Training not returning any bounding boxes; check inference
+
 
