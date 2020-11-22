@@ -1,7 +1,7 @@
 import numpy as np
 import os
 from sklearn.preprocessing import OneHotEncoder
-from csv_dataset import CSVDataset
+from csv_dataset import CsvDataset
 
 ROOT_DIR = os.path.abspath('../Mask_RCNN/')
 
@@ -21,18 +21,18 @@ GpuIndex = 0
 os.environ['CUDA_VISIBLE_DEVICES'] = str(GpuIndex)
 
 class DRISE():
-    def __init__(self, input_size, num_masks, init_mask_res, mask_prob, model, class_list_path, ):
+    def __init__(self, input_size, num_masks, init_mask_res, mask_prob, model_weights, class_list_path):
         self.input_size = input_size
         self.num_masks = num_masks
         self.s = init_mask_res
         self.p1 = mask_prob
-        self.model = model
+        self.model = self.get_model(model_weights)
         self.get_class_list(class_list_path)
         self.create_encoder()
         self.predictions_assigned = False
 
     def get_dataset(self, gt_csv_path):
-        return CSVDataset(gt_csv_path)
+        return CsvDataset(gt_csv_path)
 
     def get_model(self, weights):
         class InferenceConfig(RGBDConfig):
@@ -43,7 +43,9 @@ class DRISE():
         inference_config = InferenceConfig()
         inference_config.display()
 
-        model = 
+        self.model = modellib.MaskRCNN(mode='inference', config = inference_config, model_dir = ROOT_DIR)
+        self.model.load_weights(weights, by_name=True)
+
 
     def generate_mask(self):
         cell_size = np.ceil(np.array(self.input_size) / self.s)
@@ -177,9 +179,19 @@ class DRISE():
         return gt_rois, gt_classes
 
 
-    def explain_one(self, gt_csv_path, impath):
+    def explain_one(self, gt_csv_path, impath = None, imID = None, prediction_saliencies = True):
+
         dataset = self.get_dataset(gt_csv_path)
-        ID = dataset.get_image_id(impath)
+        if impath is not None:
+            ID = dataset.get_image_id(impath)
+        elif imID is not None:
+            impath = dataset.get_impath(imID)
+            ID = imID
+        else:
+            print("Please select either one image or an image ID")
+
+        
+            
         gt_rois, gt_classes = dataset.get_rois_and_classes(ID)
 
         results_noMask = self.get_predictions_no_mask(impath)
@@ -191,7 +203,7 @@ class DRISE():
 
         sal = self.compute_saliency(impath, gt_rois, gt_classes, assignments = None)
 
-        for i, im in enumerate(sal[:len(gt_classes),:,:]:
+        for i, im in enumerate(sal[:len(gt_classes),:,:]):
             found = True
             this_gt_box = gt_rois[i % len(gt_classes)]
             if self.predictions_assigned:
@@ -212,7 +224,12 @@ class DRISE():
 
 
 
+#self, input_size, num_masks, init_mask_res, mask_prob, model_weights, class_list_path
+weights = '../Mask_RCNN-master/logs/train1_noAug/'
+classes = '../classes.txt'
+csv_path = '../rgbd-dataset.csv'
+drise = DRISE([640,480], 5000, 16, 0.5, weights,classes)
 
-
+drise.explain_one(csv_path, imID = 0)
 
 
