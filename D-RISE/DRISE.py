@@ -1,9 +1,10 @@
 import numpy as np
 import os
 from sklearn.preprocessing import OneHotEncoder
+from sklearn.preprocessing import LabelEncoder
 from csv_dataset import CsvDataset
 import sys
-ROOT_DIR = os.path.abspath('../Mask_RCNN/')
+ROOT_DIR = os.path.abspath('../Mask_RCNN-master/')
 
 sys.path.append(ROOT_DIR)
 sys.path.append(os.path.join(ROOT_DIR, "samples/shapes/"))
@@ -26,7 +27,7 @@ class DRISE():
         self.num_masks = num_masks
         self.s = init_mask_res
         self.p1 = mask_prob
-        self.model = self.get_model(model_weights)
+        self.get_model(model_weights)
         self.get_class_list(class_list_path)
         self.create_encoder()
         self.predictions_assigned = False
@@ -75,11 +76,11 @@ class DRISE():
         return 0
 
     def create_encoder(self):
-        self.ohe = OneHotEncoder().fit(self.class_list)
+        self.ohe = OneHotEncoder(categories=[self.class_list], sparse = False)
         return 0
 
     def transform_gt_classes(self, classes):
-        return self.ohe.transform(classes.reshape(-1,1))
+        return self.ohe.fit_transform(classes.reshape(-1,1))
 
     def read_image(self, impath):
         return np.load(impath)
@@ -92,12 +93,14 @@ class DRISE():
 
     def get_predictions_no_mask(self, impath):
         im = self.read_image(impath)
+        print(impath)
         results = self.model.detect([im])
         return results[0]
 
     def assign_predictions(self, gt_rois, gt_classes, results):
         # assign predictions to their respective targets
         iou_thres = 0.4
+        print(results['rois'])
         iou = self.np_iou(gt_rois, results['rois'])
         iou = np.where(iou > iou_thres, 1, 0)
         confs = iou * results['scores']
@@ -185,7 +188,7 @@ class DRISE():
         if impath is not None:
             ID = dataset.get_image_id(impath)
         elif imID is not None:
-            impath = dataset.get_impath(imID)
+            impath = dataset.get_image_path(imID)
             ID = imID
         else:
             print("Please select either one image or an image ID")
@@ -225,7 +228,7 @@ class DRISE():
 
 
 #self, input_size, num_masks, init_mask_res, mask_prob, model_weights, class_list_path
-weights = '../Mask_RCNN-master/logs/train1_noAug/'
+weights = '../Mask_RCNN-master/logs/train1_noAug/mask_rcnn_rgbd_0004.h5'
 classes = '../classes.txt'
 csv_path = '../rgbd-dataset.csv'
 drise = DRISE([640,480], 5000, 16, 0.5, weights,classes)

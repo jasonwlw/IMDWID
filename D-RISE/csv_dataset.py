@@ -1,4 +1,4 @@
-
+import numpy as np
 
 class CsvDataset():
     def __init__(self, csv_path):
@@ -19,11 +19,12 @@ class CsvDataset():
                 y2 = line.split(',')[4]
                 cls = line.split(',')[5]
                 if impath in self.ids_to_path.values():
-                    ID_found = get_image_id(impath)
+                    ID_found = self.get_image_id(impath)
                     self.dataset[ID_found]['rois'].append([x1,y1,x2,y2])
                     self.dataset[ID_found]['classes'].append(cls)
                 else:
                     self.ids_to_path[ID] = impath
+                    self.dataset[ID] = {}
                     self.dataset[ID]['rois'] = [[x1,y1,x2,y2]]
                     self.dataset[ID]['classes'] = [cls]
                     ID += 1
@@ -32,7 +33,7 @@ class CsvDataset():
         return self.ids_to_path[ID]
 
     def get_image_id(self, impath):
-        return self.ids_to_path.keys()[self.ids_to_path.values().index(impath)]
+        return list(self.ids_to_path.keys())[list(self.ids_to_path.values()).index(impath)]
 
     def get_rois(self, ID):
         return np.array(self.dataset[ID]['rois'])
