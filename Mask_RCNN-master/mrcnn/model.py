@@ -1217,7 +1217,6 @@ def load_image_gt(dataset, config, image_id, augment=False, augmentation=None,
     #print(mask.shape)
     #print(config.IMAGE_MIN_DIM)
     #print(config.IMAGE_MAX_DIM)
-    mask = mask.transpose((1,0,2))
     original_shape = image.shape
     image, window, scale, padding, crop = utils.resize_image(
         image,
@@ -1226,7 +1225,6 @@ def load_image_gt(dataset, config, image_id, augment=False, augmentation=None,
         max_dim=config.IMAGE_MAX_DIM,
         mode=config.IMAGE_RESIZE_MODE)
     mask = utils.resize_mask(mask, scale, padding, crop)
-
     # Random horizontal flips.
     # TODO: will be removed in a future update in favor of augmentation
     if augment:
@@ -1266,6 +1264,47 @@ def load_image_gt(dataset, config, image_id, augment=False, augmentation=None,
         # Change mask back to bool
         mask = mask.astype(np.bool)
 
+    if drising:
+        ### Going to grab corresponding drise mask
+        impath = dataset.get_image_path(image_id)
+        fil = os.path.split(impath)[1]
+        if 'train' in impath:
+            smpath = impath.replace('train', 'drise_maps')
+        elif 'val' in impath:
+            smpath = impath.replace('train', 'drise_maps')
+
+
+        if os.path.exists(smpath):
+            saliency = np.load(smpath)
+            image = saliency*image
+            ### Apply other augmentations?
+        elif augmentation:
+            MASK_AUGMENTERS = ["Sequential", "SomeOf", "OneOf", "Sometimes",
+                               "Fliplr", "Flipud", "CropAndPad",
+                               "Affine", "PiecewiseAffine"]
+
+            def hook(images, augmenter, parents, default):
+                """Determines which augmenters to apply to masks."""
+                return augmenter.__class__.__name__ in MASK_AUGMENTERS
+
+            # Store shapes before augmentation to compare
+            image_shape = image.shape
+            mask_shape = mask.shape
+            # Make augmenters deterministic to apply similarly to images and masks
+            det = augmentation.to_deterministic()
+            image = det.augment_image(image)
+            # Change mask to np.uint8 because imgaug doesn't support np.bool
+            mask = det.augment_image(mask.astype(np.uint8),
+                                     hooks=imgaug.HooksImages(activator=hook))
+            # Verify that shapes didn't change
+            assert image.shape == image_shape, "Augmentation shouldn't change image size"
+            assert mask.shape == mask_shape, "Augmentation shouldn't change mask size"
+            # Change mask back to bool
+            mask = mask.astype(np.bool)
+
+        
+        ## apply to 50%
+
     # Note that some boxes might be all zeros if the corresponding mask got cropped out.
     # and here is to filter them out
     _idx = np.sum(mask, axis=(0, 1)) > 0
@@ -1290,7 +1329,6 @@ def load_image_gt(dataset, config, image_id, augment=False, augmentation=None,
     # Image meta data
     image_meta = compose_image_meta(image_id, original_shape, image.shape,
                                     window, scale, active_class_ids)
-
     return image, image_meta, class_ids, bbox, mask
 
 
@@ -2244,6 +2282,7 @@ class MaskRCNN():
                 log("{}{:20}   ({})".format(" " * indent, layer.name,
                                             layer.__class__.__name__))
 
+
     def set_log_dir(self, model_path=None):
         """Sets the model log directory and epoch counter.
 
@@ -2321,7 +2360,7 @@ class MaskRCNN():
         # Pre-defined layer regular expressions
         layer_regex = {
             # all layers but the backbone
-            "heads": r"(mrcnn\_.*)|(rpn\_.*)|(fpn\_.*)|(/^conv1$/)",
+            "heads": r"(mrcnn\_.*)|(rpn\_.*)|(fpn\_.*)|(conv[1])",
             # From a specific Resnet stage and up
             "3+": r"(res3.*)|(bn3.*)|(res4.*)|(bn4.*)|(res5.*)|(bn5.*)|(mrcnn\_.*)|(rpn\_.*)|(fpn\_.*)",
             "4+": r"(res4.*)|(bn4.*)|(res5.*)|(bn5.*)|(mrcnn\_.*)|(rpn\_.*)|(fpn\_.*)",

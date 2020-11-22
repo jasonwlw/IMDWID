@@ -112,6 +112,25 @@ for image_id in image_ids:
 ## Create Model
 """
 
+class DRISECallback(keras.callbacks.Callback):
+    #Can I just run DRISE from in here? How would I get augmentation masks to the model... 
+    # COuld I save them to a local directory and load them when I need them?
+
+    def on_epoch_end(self, epochs):
+        # create model in inference mode
+        # Will this even know where this is?
+        inf_model = modellib.MaskRCNN(mode="inference", config=config, model_dir=MODEL_DIR)
+        inf_model.load_weights(model.find_last(), by_name = True)
+        # run on 50%? of training set
+        if os.path.exists(saliency_map_path):
+            os.remove(saliency_map_path)
+            os.makedirs(saliency_map_path)
+
+
+        # find mislocalizations/classifications
+        # computed difference of saliency maps
+
+
 # %%
 # Create model in training mode
 model = modellib.MaskRCNN(mode="training", config=config,
@@ -149,17 +168,11 @@ Train in two stages:
 # Passing layers="heads" freezes all layers except the head
 # layers. You can also pass a regular expression to select
 # which layers to train by name pattern.
-#model.train(dataset_train, dataset_val, 
-            #learning_rate=config.LEARNING_RATE, 
-            #epochs=5, 
-            #layers='heads')
+model.train(dataset_train, dataset_val, 
+            learning_rate=config.LEARNING_RATE, 
+            epochs=10, 
+            layers='heads')
 
-#model.train(dataset_train, dataset_val, 
-            #learning_rate=config.LEARNING_RATE, 
-            #epochs=5, 
-            #layers='heads',
-            #augmentation = imgaug.augmenters.Crop(percent=(0,0.1)))
-# %%
 # Fine tune all layers
 # Passing layers="all" trains all layers. You can also 
 # pass a regular expression to select which layers to
@@ -236,7 +249,7 @@ visualize.display_instances(original_image, r['rois'], r['masks'], r['class_ids'
 # %%
 # Compute VOC-Style mAP @ IoU=0.5
 # Running on 10 images. Increase for better accuracy.
-image_ids = np.random.choice(dataset_val.image_ids, 10)
+image_ids = np.random.choice(dataset_val.image_ids, 20)
 APs = []
 for image_id in image_ids:
     # Load image and ground truth data
@@ -253,6 +266,94 @@ for image_id in image_ids:
                          r["rois"], r["class_ids"], r["scores"], r['masks'])
     APs.append(AP)
     
-print("mAP: ", np.mean(APs))
+print("mAP No Augmentation: ", np.mean(APs))
+
+model = modellib.MaskRCNN(mode="training", config=config,
+                          model_dir=MODEL_DIR)
+# %%
+model.train(dataset_train, dataset_val, 
+            learning_rate=config.LEARNING_RATE, 
+            epochs=10, 
+            layers='heads',
+            augmentation = imgaug.augmenters.Crop(percent=(0,0.1)))
+
 
 # %%
+# %%
+"""
+## Detection
+"""
+
+# %%
+class InferenceConfig(RGBDConfig):
+    GPU_COUNT = 1
+    IMAGES_PER_GPU = 1
+    IMAGE_MIN_DIM = 480
+    IMAGE_MAX_DIM = 640
+
+inference_config = InferenceConfig()
+
+# Recreate the model in inference mode
+model = modellib.MaskRCNN(mode="inference", 
+                          config=inference_config,
+                          model_dir=MODEL_DIR)
+
+# Get path to saved weights
+# Either set a specific path or find last trained weights
+# model_path = os.path.join(ROOT_DIR, ".h5 file name here")
+model_path = model.find_last()
+
+# oad trained weights
+print("Loading weights from ", model_path)
+model.load_weights(model_path, by_name=True)
+
+# %% 
+# Test on a random image
+image_id = random.choice(dataset_val.image_ids)
+original_image, image_meta, gt_class_id, gt_bbox, gt_mask =\
+    modellib.load_image_gt(dataset_val, inference_config, 
+                           image_id, use_mini_mask=False)
+
+log("original_image", original_image)
+log("image_meta", image_meta)
+log("gt_class_id", gt_class_id)
+log("gt_bbox", gt_bbox)
+log("gt_mask", gt_mask)
+
+visualize.display_instances(original_image, gt_bbox, gt_mask, gt_class_id, 
+                            dataset_train.class_names, figsize=(8, 8))
+
+# %%
+results = model.detect([original_image], verbose=1)
+
+r = results[0]
+visualize.display_instances(original_image, r['rois'], r['masks'], r['class_ids'], 
+                            dataset_val.class_names, r['scores'], ax=get_ax())
+
+
+# %%
+"""
+## Evaluation
+"""
+
+# %%
+# Compute VOC-Style mAP @ IoU=0.5
+# Running on 10 images. Increase for better accuracy.
+image_ids = np.random.choice(dataset_val.image_ids, 20)
+APs = []
+for image_id in image_ids:
+    # Load image and ground truth data
+    image, image_meta, gt_class_id, gt_bbox, gt_mask =\
+        modellib.load_image_gt(dataset_val, inference_config,
+                               image_id, use_mini_mask=False)
+    molded_images = np.expand_dims(modellib.mold_image(image, inference_config), 0)
+    # Run object detection
+    results = model.detect([image], verbose=0)
+    r = results[0]
+    # Compute AP
+    AP, precisions, recalls, overlaps =\
+        utils.compute_ap(gt_bbox, gt_class_id, gt_mask,
+                         r["rois"], r["class_ids"], r["scores"], r['masks'])
+    APs.append(AP)
+    
+print("mAP with Augmentation: ", np.mean(APs))

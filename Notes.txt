@@ -10,20 +10,27 @@ Installed cudNN 7.6; Cuda 10.0.0
 
 https://medium.com/@praveenkrishna/downgrade-cuda-for-tensorflow-gpu-17831db59099
 
-Inference is not working; probably image shape in config; masks are 800x480?
 
 2226 is aug? Look for latest timestamp
 
 TODO:
 
-Add D-RISE
+(done) Add D-RISE
+
+Test D-RISE
 
 Enable prediction saliency maps
 
-Add conv1 to training!
+use DRISECallback to create saliency maps, save to data/drise_maps directory with same image name. Load them in load_image_gt in lieu of augmentation
+
+Use difference in bext prediction (according to what metrics?) and target saliency maps; target - prediction and normalize to emphasize areas the mode didn't focus on and deemphasize parts it did
+
+(done) Add conv1 to training!
 
 Image type bool warning??
 
-Training not returning any bounding boxes; check inference
+(done) Training not returning any bounding boxes; check inference; masks were being transposed; forgot to remove line when combine_channels wasn't refined
+
+
 
 

@@ -147,6 +147,10 @@ class RGBDDataset(utils.Dataset):
         image = image.astype(np.uint8)
         return image
 
+    def get_image_path(self, image_id):
+        info = self.image_info[image_id]
+        return info['path']
+
     def image_reference(self, image_id):
         """Return the rgbd data of the image."""
         info = self.image_info[image_id]
