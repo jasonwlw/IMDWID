@@ -57,6 +57,7 @@ train_ims = [im.decode('UTF-8') for im in train_ims]
 val_ims = [im.decode('UTF-8') for im in val_ims]
 width = 640
 height = 480
+
 for i,key in tqdm(enumerate(create_rgbd), desc="Creating 4D Images"):
     #save 4d images
     save_path = key.split(os.sep)
@@ -134,9 +135,9 @@ for i,fil in tqdm(enumerate(mat_files), desc="Reading .mat files"):
                 left = annotation[4][0][0]
                 right = annotation[5][0][0]
                 im_classes.append(cls)
-                mask[left:right, bottom:top, k] = 1
+                mask[bottom:top, left:right, k] = 1
                 with open('rgbd-dataset.csv', 'a') as f0:
-                    f0.write(save_path.replace('gt','combined') + ',' + str(left) + ',' + str(bottom) + ',' + str(right) + ',' + str(top)+ ',' + cls)
+                    f0.write(save_path.replace('gt','combined') + ',' + str(left) + ',' + str(bottom) + ',' + str(right) + ',' + str(top)+ ',' + cls+'\n')
 
         #save_path = impath.replace('combined', 'masks')
         #print(save_path)
@@ -145,7 +146,6 @@ for i,fil in tqdm(enumerate(mat_files), desc="Reading .mat files"):
         with open(save_path, 'w+') as f0:
             for cls in im_classes:
                 f0.write(cls+'\n')
-
 
 """
 with open('./classes.txt', 'w+') as f0:

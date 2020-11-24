@@ -53,8 +53,17 @@ if not os.path.exists(COCO_MODEL_PATH):
 from rgbd import RGBDConfig, RGBDDataset
 
 # %%
+#1118 training examples
+#290 validation examples
+# Classes?
+class TrainConfig(RGBDConfig):
+    STEPS_PER_EPOCH = 500
+    VALIDATION_STEPS = 20
+    #TRAIN_ROIS_PER_IMAGE = 50
+    RPN_ANCHOR_SCALES = (32, 64, 128, 256, 512)
+
     
-config = RGBDConfig()
+config = TrainConfig()
 config.display()
 
 # %%
@@ -110,9 +119,8 @@ for image_id in image_ids:
 # %%
 """
 ## Create Model
-"""
 
-class DRISECallback(keras.callbacks.Callback):
+class DRISECallback(tf.keras.callbacks.Callback):
     #Can I just run DRISE from in here? How would I get augmentation masks to the model... 
     # COuld I save them to a local directory and load them when I need them?
 
@@ -129,8 +137,7 @@ class DRISECallback(keras.callbacks.Callback):
 
         # find mislocalizations/classifications
         # computed difference of saliency maps
-
-
+"""
 # %%
 # Create model in training mode
 model = modellib.MaskRCNN(mode="training", config=config,
@@ -152,7 +159,6 @@ elif init_with == "coco":
 elif init_with == "last":
     # Load the last model you trained and continue training
     model.load_weights(model.find_last(), by_name=True)
-
 # %%
 """
 ## Training
@@ -205,6 +211,7 @@ class InferenceConfig(RGBDConfig):
 inference_config = InferenceConfig()
 
 # Recreate the model in inference mode
+"""
 model = modellib.MaskRCNN(mode="inference", 
                           config=inference_config,
                           model_dir=MODEL_DIR)
@@ -268,14 +275,30 @@ for image_id in image_ids:
     
 print("mAP No Augmentation: ", np.mean(APs))
 
+"""
+
 model = modellib.MaskRCNN(mode="training", config=config,
                           model_dir=MODEL_DIR)
+
+
+model.load_weights(COCO_MODEL_PATH, by_name=True,
+                   exclude=["mrcnn_class_logits", "mrcnn_bbox_fc", 
+                            "mrcnn_bbox", "mrcnn_mask", "conv1"])
 # %%
+
+#model.train(dataset_train, dataset_val, 
+            #learning_rate=config.LEARNING_RATE, 
+            #epochs=10, 
+            #layers='heads',
+            #augmentation = imgaug.augmenters.Crop(percent=(0,0.1)))
+
+
+
 model.train(dataset_train, dataset_val, 
             learning_rate=config.LEARNING_RATE, 
             epochs=10, 
             layers='heads',
-            augmentation = imgaug.augmenters.Crop(percent=(0,0.1)))
+            augmentation = imgaug.augmenters.flip.Fliplr(0.5))
 
 
 # %%
@@ -292,7 +315,7 @@ class InferenceConfig(RGBDConfig):
     IMAGE_MAX_DIM = 640
 
 inference_config = InferenceConfig()
-
+"""
 # Recreate the model in inference mode
 model = modellib.MaskRCNN(mode="inference", 
                           config=inference_config,
@@ -357,3 +380,4 @@ for image_id in image_ids:
     APs.append(AP)
     
 print("mAP with Augmentation: ", np.mean(APs))
+"""

@@ -31,6 +31,10 @@ Image type bool warning??
 
 (done) Training not returning any bounding boxes; check inference; masks were being transposed; forgot to remove line when combine_channels wasn't refined
 
+Add removing data and rgbd-dataset.csv to combine_channels script
+
+Test no augmentation model and augmentation on augmented images
+
 
 
 

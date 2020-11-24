@@ -123,6 +123,8 @@ class InferenceConfig(RGBDConfig):
     IMAGES_PER_GPU = 1
     IMAGE_MIN_DIM = 480
     IMAGE_MAX_DIM = 640
+    #RPN_ANCHOR_SCALES = (32, 64, 128, 256, 512)
+
 
 inference_config = InferenceConfig()
 
@@ -136,7 +138,7 @@ model = modellib.MaskRCNN(mode="inference",
 # model_path = os.path.join(ROOT_DIR, ".h5 file name here")
 #model_path = model.find_last()
 
-model_path = os.path.join(ROOT_DIR, 'logs', 'train1_noAug', 'mask_rcnn_rgbd_0004.h5')
+model_path = os.path.join(ROOT_DIR, 'logs', 'rgbd_10e_NoAug', 'mask_rcnn_rgbd_0009.h5')
 
 # oad trained weights
 print("Loading weights from ", model_path)
@@ -156,14 +158,14 @@ log("gt_bbox", gt_bbox)
 log("gt_mask", gt_mask)
 
 visualize.display_instances(original_image, gt_bbox, gt_mask, gt_class_id, 
-                            dataset_train.class_names, figsize=(8, 8))
+                            dataset_train.class_names, figsize=(8, 8),save_path = 'gt_instances_'+str(image_id)+'.png')
 
 # %%
 results = model.detect([original_image], verbose=1)
 
 r = results[0]
 visualize.display_instances(original_image, r['rois'], r['masks'], r['class_ids'], 
-                            dataset_val.class_names, r['scores'], ax=get_ax())
+                            dataset_val.class_names, r['scores'], ax=get_ax(), save_path = 'pred_instances_'+str(image_id)+'.png')
 
 # %%
 """
@@ -173,9 +175,10 @@ visualize.display_instances(original_image, r['rois'], r['masks'], r['class_ids'
 # %%
 # Compute VOC-Style mAP @ IoU=0.5
 # Running on 10 images. Increase for better accuracy.
-image_ids = np.random.choice(dataset_val.image_ids, 10)
+#image_ids = np.random.choice(dataset_val.image_ids, 10)
+
 APs = []
-for image_id in image_ids:
+for image_id in dataset_val.image_ids:
     # Load image and ground truth data
     image, image_meta, gt_class_id, gt_bbox, gt_mask =\
         modellib.load_image_gt(dataset_val, inference_config,

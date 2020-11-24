@@ -13,10 +13,10 @@ class CsvDataset():
             for i,line in enumerate(f0.readlines()):
                 line = line.strip()
                 impath = line.split(',')[0]
-                x1 = line.split(',')[1]
-                y1 = line.split(',')[2]
-                x2 = line.split(',')[3]
-                y2 = line.split(',')[4]
+                x1 = int(line.split(',')[1])
+                y1 = int(line.split(',')[2])
+                x2 = int(line.split(',')[3])
+                y2 = int(line.split(',')[4])
                 cls = line.split(',')[5]
                 if impath in self.ids_to_path.values():
                     ID_found = self.get_image_id(impath)
@@ -39,6 +39,7 @@ class CsvDataset():
         return np.array(self.dataset[ID]['rois'])
 
     def get_classes(self, ID):
+        print("HERE", np.array(self.dataset[ID]['classes']))
         return np.array(self.dataset[ID]['classes'])
 
     def get_rois_and_classes(self, ID):
