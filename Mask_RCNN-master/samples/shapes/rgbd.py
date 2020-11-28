@@ -18,7 +18,7 @@ import cv2
 from scipy.io import loadmat
 
 # Root directory of the project
-ROOT_DIR = os.path.abspath("../../")
+ROOT_DIR = os.path.abspath("/home/witryjw/IMDWID/Mask_RCNN-master/")
 
 # Import Mask RCNN
 sys.path.append(ROOT_DIR)  # To find local version of the library
@@ -81,6 +81,7 @@ class RGBDDataset(utils.Dataset):
         """
 
         # Add classes
+        print(ROOT_DIR)
         with open(os.path.join(ROOT_DIR, '../classes.txt'), 'r') as f0:
             for i,line in enumerate(f0.readlines()):
                 line = line.strip()

@@ -19,20 +19,23 @@ import cv2
 from tqdm import tqdm
 
 from rgbd import RGBDConfig
+from rgbd import RGBDDataset
 
 GpuIndex = 0
 os.environ['CUDA_VISIBLE_DEVICES'] = str(GpuIndex)
 
 class DRISE():
-    def __init__(self, input_shape, num_masks, init_mask_res, mask_prob, model_weights, class_list_path):
+    def __init__(self, input_shape, num_masks, init_mask_res, mask_prob, model_weights, class_list_path, dataset, config):
         self.input_shape = input_shape
         self.num_masks = num_masks
         self.s = init_mask_res
         self.p1 = mask_prob
+        self.config = config
         self.get_model(model_weights)
         self.get_class_list(class_list_path)
         self.create_encoder()
         self.predictions_assigned = False
+        self.dataset = dataset
 
     def get_dataset(self, gt_csv_path):
         return CsvDataset(gt_csv_path)
@@ -59,16 +62,7 @@ class DRISE():
 
 
     def get_model(self, weights):
-        class InferenceConfig(RGBDConfig):
-            GPU_COUNT = 1
-            IMAGES_PER_GPU = 1
-            DEPTH_NULL = False
-            #RPN_ANCHOR_SCALES = (32, 64, 128, 256, 512)
-
-        inference_config = InferenceConfig()
-        inference_config.display()
-
-        self.model = modellib.MaskRCNN(mode='inference', config = inference_config, model_dir = ROOT_DIR)
+        self.model = modellib.MaskRCNN(mode='inference', config = self.config, model_dir = ROOT_DIR)
         self.model.load_weights(weights, by_name=True)
 
 
@@ -112,19 +106,25 @@ class DRISE():
         print(self.class_list)
         return self.ohe.fit_transform(list(classes.reshape(-1,1)))
 
-    def read_image(self, impath):
-        return np.load(impath)
+    def read_image(self, impath, image_id):
+        #im = np.load(impath)
 
-    def get_predictions(self, impath):
-        im = self.read_image(impath)
+        image, image_meta, gt_class_id, gt_bbox, gt_mask =\
+        modellib.load_image_gt(self.dataset, inference_config,
+                               image_id, use_mini_mask=False)
+        return image
+
+    def get_predictions(self, image):
+        #im = self.read_image(impath)
         mask = self.generate_mask()
-        results = self.model.detect([im*mask]) 
+        results = self.model.detect([image*mask]) 
         return results[0], mask
 
-    def get_predictions_no_mask(self, impath):
-        im = self.read_image(impath)
-        print(impath)
-        results = self.model.detect([im])
+    def get_predictions_no_mask(self, image):
+        #im = self.read_image(impath, image_id)
+
+        #print(impath)
+        results = self.model.detect([image])
         return results[0]
 
     def assign_predictions(self, gt_rois, gt_classes, results):
@@ -150,7 +150,8 @@ class DRISE():
         #assert is_unique(maxes) any duplicates?
         # Check that rois are in x1, y1, x2, y2 order 
         self.predicted_boxes = results['rois']
-        self.predicted_classes = self.get_str_classes(results['class_ids'])
+        #self.predicted_classes = self.get_str_classes(results['class_ids'])
+        self.predicted_classes = results['class_ids']
         if self.inds.size == 0:
             #There are no predictions that meet the score+iou threshold
             self.predictions_assigned = False
@@ -158,7 +159,7 @@ class DRISE():
             self.predictions_assigned = True
 
 
-    def compute_saliency(self,impath, gt_rois, gt_classes):
+    def compute_saliency(self,image, gt_rois, gt_classes):
         if self.predictions_assigned:
             print(self.inds)
             print(type(self.inds),type(self.inds[0]))
@@ -168,10 +169,11 @@ class DRISE():
 
 
         sal = np.zeros((len(gt_classes), *self.input_shape))
+        gt_classes = self.get_str_classes(gt_classes)
         gt_classes = self.transform_gt_classes(gt_classes)
         for i in tqdm(range(self.num_masks), desc="Detecting Masked Images"):
             # mask shape = (1, h, w)
-            results, mask = self.get_predictions(impath)
+            results, mask = self.get_predictions(image)
             if results['rois'].shape[0] == 0:
                 #we have no detections; mask would be zeroed anyway, just don't add anything
                 continue
@@ -233,26 +235,31 @@ class DRISE():
 
         dataset = self.get_dataset(gt_csv_path)
         if impath is not None:
-            ID = dataset.get_image_id(impath)
+            image_id = dataset.get_image_id(impath)
         elif imID is not None:
             impath = dataset.get_image_path(imID)
-            ID = imID
+            image_id = imID
         else:
             print("Please select either one image or an image ID")
 
         
-            
-        gt_rois, gt_classes = dataset.get_rois_and_classes(ID)
+         
+        image, image_meta, gt_classes, gt_rois, gt_mask =\
+        modellib.load_image_gt(self.dataset, self.config,
+                               image_id, use_mini_mask=False)
 
-        results_noMask = self.get_predictions_no_mask(impath)
+        #gt_rois, gt_classes = dataset.get_rois_and_classes(ID)
+
+        results_noMask = self.get_predictions_no_mask(image)
 
         if prediction_saliencies:
             assignments = self.assign_predictions(gt_rois, gt_classes, results_noMask)
         else:
             assignments = None
 
-        sal = self.compute_saliency(impath, gt_rois, gt_classes)
-
+        sal = self.compute_saliency(image, gt_rois, gt_classes)
+        gt_classes = self.get_str_classes(gt_classes)
+        self.predicted_classes = self.get_str_classes(self.predicted_classes)
         for i, im in enumerate(sal[:len(gt_classes),:,:]):
             found = True
             this_gt_box = gt_rois[i % len(gt_classes)]
@@ -319,10 +326,24 @@ class DRISE():
 weights = '../Mask_RCNN-master/logs/rgbd_10e_NoAug/mask_rcnn_rgbd_0009.h5'
 classes = '../classes.txt'
 csv_path = '../rgbd-dataset.csv'
-drise = DRISE([480,640], 5000, 16, 0.5, weights,classes)
+class InferenceConfig(RGBDConfig):
+    GPU_COUNT = 1
+    IMAGES_PER_GPU = 1
+    DEPTH_NULL = False
+    #RPN_ANCHOR_SCALES = (32, 64, 128, 256, 512)
+config = InferenceConfig()
+
+print(ROOT_DIR)
+
+dataset_val = RGBDDataset()
+dataset_val.load_images(os.path.join(ROOT_DIR, '../data/val/'), config.IMAGE_SHAPE[0], config.IMAGE_SHAPE[1])
+dataset_val.prepare()
+
+
+drise = DRISE([640,640], 5000, 16, 0.5, weights,classes, dataset_val, config)
 
 #drise.explain_one(csv_path, imID = 0, prediction_saliencies = True)
 
-drise.explain_many(csv_path, IDs = [0,1,2,3], prediction_saliencies = True)
+drise.explain_many(csv_path, IDs = [4,5], prediction_saliencies = True)
 
 

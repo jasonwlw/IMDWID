@@ -96,7 +96,7 @@ dataset_train.prepare()
 
 # Validation dataset
 dataset_val = RGBDDataset()
-dataset_val.load_images(os.path.join(ROOT_DIR, '../data/train/'), config.IMAGE_SHAPE[0], config.IMAGE_SHAPE[1])
+dataset_val.load_images(os.path.join(ROOT_DIR, '../data/val/'), config.IMAGE_SHAPE[0], config.IMAGE_SHAPE[1])
 dataset_val.prepare()
 
 # %%
