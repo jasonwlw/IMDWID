@@ -1187,7 +1187,7 @@ def mrcnn_mask_loss_graph(target_masks, target_class_ids, pred_masks):
 ############################################################
 
 def load_image_gt(dataset, config, image_id, augment=False, augmentation=None,
-                  use_mini_mask=False, drising = False):
+                  use_mini_mask=False, drising = False, brightness = False, hue = False, hsv = False, crop = False, flip = False, aug_range = None, drise_random=False):
     """Load and return ground truth data for an image (image, mask, bounding boxes).
 
     augment: (deprecated. Use augmentation instead). If true, apply random
@@ -1235,7 +1235,117 @@ def load_image_gt(dataset, config, image_id, augment=False, augmentation=None,
 
     # Augmentation
     # This requires the imgaug lib (https://github.com/aleju/imgaug)
+
+
+
+    if drising:
+        ### Going to grab corresponding drise mask
+        # How to tell if it's missed? Move to new directory
+        impath = dataset.get_image_path(image_id)
+        ids_dict = np.load(os.path.join(ROOT_DIR, '../D-RISE', 'path_to_ids.npy'))
+        if impath in ids_dict:
+            mask_id = ids_dict[impath]
+            smpath_orig = os.path.join(ROOT_DIR, '../D-RISE', 'original_masks', str(mask_id)+'.npy')
+        else:
+            smpath_orig = None
+
+        smpath = os.path.join(ROOT_DIR, '../D-RISE', 'masks', str(image_id)+'.npy')
+        if os.path.exists(smpath) and not drise_random:
+
+            saliency = np.load(smpath)
+            # normalize saliencies
+            if aug_range is None:
+                aug_range = np.random.randint(-120,120, size=2)
+                aug_range = sorted(aug_range)
+            conf = np.mean(saliency)
+
+        
+            if hsv:
+                #Probably add; don't want color to change more based on higher number; what should normalization be here?
+
+                # Shift by either nothing or 120; 2 colors
+                saliency = ((saliency - np.min(saliency))/(np.max(saliency) - np.min(saliency))) * (aug_range[1] - aug_range[0]) + aug_range[0]
+
+                image = cv2.cvtColor(image, cv2.COLOR_RGB2HSV)
+                if hue:
+                    aug_range = [0,120]
+                    # Shift by either nothing or 120; 2 colors
+                    saliency = ((saliency - np.min(saliency))/(np.max(saliency) - np.min(saliency))) * (aug_range[1] - aug_range[0]) + aug_range[0]
+
+                    #image[:,:,0] = np.clip(saliency+np.expand_dims(image[:,:,0], 2), 0, 255)[:,:,0].astype(np.uint8)
+                    image[:,:,0] = (saliency+np.expand_dims(image[:,:,0], 2)[:,:,0]).astype(np.uint8)
+                else:
+                    image = saliency+image
+
+                image = cv2.cvtColor(image, cv2.COLOR_HSV2RGB)
+
+            if brightness:
+                aug_range = [np.random.uniform(0.0,0.5),np.random.uniform(1.0,1.5)]
+                saliency = ((saliency - np.min(saliency))/(np.max(saliency) - np.min(saliency))) * (aug_range[1] - aug_range[0]) + aug_range[0]
+                image = saliency*image
+            if crop:
+                #fairly complicated here...
+                pass
+            if flip:
+                pass
+        
+
+            ### Apply other augmentations if no mask?
+
+        elif smpath_orig is not None and not drise_random:
+            saliency = np.load(smpath_orig)
+            # normalize saliencies
+            if aug_range is None:
+                aug_range = np.random.randint(-120,120, size=2)
+                aug_range = sorted(aug_range)
+            conf = np.mean(saliency)
+
+        
+            if hsv:
+                #Probably add; don't want color to change more based on higher number; what should normalization be here?
+
+                # Shift by either nothing or 120; 2 colors
+                saliency = ((saliency - np.min(saliency))/(np.max(saliency) - np.min(saliency))) * (aug_range[1] - aug_range[0]) + aug_range[0]
+
+                image = cv2.cvtColor(image, cv2.COLOR_RGB2HSV)
+                if hue:
+                    aug_range = [0,120]
+                    # Shift by either nothing or 120; 2 colors
+                    saliency = ((saliency - np.min(saliency))/(np.max(saliency) - np.min(saliency))) * (aug_range[1] - aug_range[0]) + aug_range[0]
+
+                    #image[:,:,0] = np.clip(saliency+np.expand_dims(image[:,:,0], 2), 0, 255)[:,:,0].astype(np.uint8)
+                    image[:,:,0] = (saliency+np.expand_dims(image[:,:,0], 2)[:,:,0]).astype(np.uint8)
+                else:
+                    image = saliency+image
+
+                image = cv2.cvtColor(image, cv2.COLOR_HSV2RGB)
+
+            if brightness:
+                aug_range = [np.random.uniform(0.0,0.5),np.random.uniform(1.0,1.5)]
+                saliency = ((saliency - np.min(saliency))/(np.max(saliency) - np.min(saliency))) * (aug_range[1] - aug_range[0]) + aug_range[0]
+                image = saliency*image
+            if crop:
+                #fairly complicated here...
+                pass
+            if flip:
+                pass
+        
+
+
+        elif drise_random:
+            hue_mask = np.expand_dims(np.random.uniform(low=0, high = 120, size = (image.shape[0], image.shape[1])), 2)
+            bright_mask = np.epand_dims(np.random.uniform(low = np.random.uniform(0.0,0.5), high = np.random.uniform(1.0, 1.5), size = (image.shape[0], image.shape[1])), 2)
+            if hue:
+                image = cv2.cvtColor(image, cv2.COLOR_RGB2HSV)
+                image[:,:,0] = (hue_mask+np.expand_dims(image[:,:,0], 2)[:,:,0]).astype(np.uint8)
+                image = cv2.cvtColor(image, cv2.COLOR_HSV2RGB)
+            if brightness:
+                image = image*bright_mask
+            
+
+        ## apply to 50%
     if augmentation:
+        #will need to change if want to do random with drise
         import imgaug
 
         # Augmenters that are safe to apply to masks
@@ -1263,47 +1373,6 @@ def load_image_gt(dataset, config, image_id, augment=False, augmentation=None,
         assert mask.shape == mask_shape, "Augmentation shouldn't change mask size"
         # Change mask back to bool
         mask = mask.astype(np.bool)
-
-    if drising:
-        ### Going to grab corresponding drise mask
-        impath = dataset.get_image_path(image_id)
-        fil = os.path.split(impath)[1]
-        if 'train' in impath:
-            smpath = impath.replace('train', 'drise_maps')
-        elif 'val' in impath:
-            smpath = impath.replace('train', 'drise_maps')
-
-
-        if os.path.exists(smpath):
-            saliency = np.load(smpath)
-            image = saliency*image
-            ### Apply other augmentations?
-        elif augmentation:
-            MASK_AUGMENTERS = ["Sequential", "SomeOf", "OneOf", "Sometimes",
-                               "Fliplr", "Flipud", "CropAndPad",
-                               "Affine", "PiecewiseAffine"]
-
-            def hook(images, augmenter, parents, default):
-                """Determines which augmenters to apply to masks."""
-                return augmenter.__class__.__name__ in MASK_AUGMENTERS
-
-            # Store shapes before augmentation to compare
-            image_shape = image.shape
-            mask_shape = mask.shape
-            # Make augmenters deterministic to apply similarly to images and masks
-            det = augmentation.to_deterministic()
-            image = det.augment_image(image)
-            # Change mask to np.uint8 because imgaug doesn't support np.bool
-            mask = det.augment_image(mask.astype(np.uint8),
-                                     hooks=imgaug.HooksImages(activator=hook))
-            # Verify that shapes didn't change
-            assert image.shape == image_shape, "Augmentation shouldn't change image size"
-            assert mask.shape == mask_shape, "Augmentation shouldn't change mask size"
-            # Change mask back to bool
-            mask = mask.astype(np.bool)
-
-        
-        ## apply to 50%
 
     # Note that some boxes might be all zeros if the corresponding mask got cropped out.
     # and here is to filter them out
@@ -2322,7 +2391,7 @@ class MaskRCNN():
             "*epoch*", "{epoch:04d}")
 
     def train(self, train_dataset, val_dataset, learning_rate, epochs, layers,
-              augmentation=None, custom_callbacks=None, no_augmentation_sources=None):
+              augmentation=None, custom_callbacks=None, no_augmentation_sources=None, drising = False, hue = False, hsv = False, brightness = False, flip = False, crop = False, drise_random=False):
         """Train the model.
         train_dataset, val_dataset: Training and validation Dataset objects.
         learning_rate: The learning rate to train with
@@ -2360,7 +2429,8 @@ class MaskRCNN():
         # Pre-defined layer regular expressions
         layer_regex = {
             # all layers but the backbone
-            "heads": r"(mrcnn\_.*)|(rpn\_.*)|(fpn\_.*)|(conv[1])",
+            "heads4D": r"(mrcnn\_.*)|(rpn\_.*)|(fpn\_.*)|(conv[1])",
+            "heads": r"(mrcnn\_.*)|(rpn\_.*)|(fpn\_.*)",
             # From a specific Resnet stage and up
             "3+": r"(res3.*)|(bn3.*)|(res4.*)|(bn4.*)|(res5.*)|(bn5.*)|(mrcnn\_.*)|(rpn\_.*)|(fpn\_.*)",
             "4+": r"(res4.*)|(bn4.*)|(res5.*)|(bn5.*)|(mrcnn\_.*)|(rpn\_.*)|(fpn\_.*)",

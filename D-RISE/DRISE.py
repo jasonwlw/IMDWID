@@ -8,11 +8,12 @@ import sys
 ROOT_DIR = os.path.abspath('../Mask_RCNN-master/')
 
 sys.path.append(ROOT_DIR)
-sys.path.append(os.path.join(ROOT_DIR, "samples/shapes/"))
+sys.path.append(os.path.join(ROOT_DIR, "samples/rgbd/"))
 
 from mrcnn import utils
 import mrcnn.model as modellib
 from mrcnn import visualize
+#from mrcnn import utils
 from mrcnn.model import log
 import matplotlib.pyplot as plt
 import cv2
@@ -81,11 +82,14 @@ class DRISE():
         return mask
 
 
-    def get_class_list(self, class_list_path):
+    def get_class_list(self, class_list_path = None):
         self.class_list = []
-        with open(class_list_path, 'r') as f0:
-            for line in f0.readlines():
-                self.class_list.append(line.strip())
+        if class_list_path is not None:
+            with open(class_list_path, 'r') as f0:
+                for line in f0.readlines():
+                    self.class_list.append(line.strip())
+        else:
+            self.class_list = os.listdir(os.path.join(ROOT_DIR,'../rgbd-dataset/'))
         return 0
 
     def set_class_list(self, class_list):
@@ -129,7 +133,7 @@ class DRISE():
 
     def assign_predictions(self, gt_rois, gt_classes, results):
         # assign predictions to their respective targets
-        iou_thres = 0.4
+        iou_thres = 0.3
         iou = self.np_iou(gt_rois, results['rois'])
         print("GT", gt_rois)
         print("Pred", results['rois'])
@@ -145,8 +149,20 @@ class DRISE():
         print("where confs", confs)
         print(mask)
         print(confs[mask])
+        print("confs", confs)
         self.inds = confs[mask].astype(int)
+        #for getting correct predictions
         self.maxes = dict(zip(np.arange(len(gt_classes)), confs))
+        count = 0
+        for i, conf in enumerate(confs):
+            if conf is not None:
+                confs[i] = count + len(gt_classes)
+                count += 1
+            else:
+                pass
+        # For getting correct saliency maps
+        self.assignments = dict(zip(np.arange(len(gt_classes)), confs))
+        print(confs)
         #assert is_unique(maxes) any duplicates?
         # Check that rois are in x1, y1, x2, y2 order 
         self.predicted_boxes = results['rois']
@@ -165,10 +181,13 @@ class DRISE():
             print(type(self.inds),type(self.inds[0]))
             print(self.inds[0])
             gt_rois = np.append(gt_rois, self.predicted_boxes[self.inds,:], axis = 0)
+            print("GT_CLASSES1", gt_classes)
             gt_classes = np.append(gt_classes, self.predicted_classes[self.inds])
+            print("GT_CLASSES2", gt_classes)
 
 
         sal = np.zeros((len(gt_classes), *self.input_shape))
+        print("GT CLASSES", gt_classes) 
         gt_classes = self.get_str_classes(gt_classes)
         gt_classes = self.transform_gt_classes(gt_classes)
         for i in tqdm(range(self.num_masks), desc="Detecting Masked Images"):
@@ -199,11 +218,13 @@ class DRISE():
         return logits
 
     def process_rois(self, rois):
+        #rois = rois*np.array([480./640., 1., 480./640., 1.], dtype = np.float32)
         # Add any processing to rois here
         return rois
 
     def cosine_similarity(self, DP1, DP2):
         norms = 1./np.linalg.norm(DP2, axis = 1)
+        #Insert norms for predicted boxes as well
         dots = np.tensordot(DP1, DP2.T, axes = 1)
         return dots * norms
     
@@ -231,9 +252,9 @@ class DRISE():
         return gt_rois, gt_classes
 
 
-    def explain_one(self, gt_csv_path, impath = None, imID = None, prediction_saliencies = True):
-
-        dataset = self.get_dataset(gt_csv_path)
+    def explain_one(self, gt_csv_path=None, impath = None, imID = None, prediction_saliencies = True):
+        if gt_csv_path is not None:
+            dataset = self.get_dataset(gt_csv_path)
         if impath is not None:
             image_id = dataset.get_image_id(impath)
         elif imID is not None:
@@ -251,16 +272,21 @@ class DRISE():
         #gt_rois, gt_classes = dataset.get_rois_and_classes(ID)
 
         results_noMask = self.get_predictions_no_mask(image)
-
-        if prediction_saliencies:
+        #results_noMask['rois'] = results_noMask['rois']*np.array([480./640., 1., 480./640., 1.], dtype = np.float32)
+        self.predictions_assigned = False
+        self.predicted_boxes = []
+        if prediction_saliencies and bool(len(results_noMask['rois'])) and bool(len(results_noMask['class_ids'])):
             assignments = self.assign_predictions(gt_rois, gt_classes, results_noMask)
         else:
             assignments = None
+        #AP, precisions, recalls, overlaps = utils.compute_ap(gt_bbox, gt_class_id, gt_mask, results_noMask["rois"], results_noMask["class_ids"], results_noMask["scores"], results_noMask['masks'])
 
         sal = self.compute_saliency(image, gt_rois, gt_classes)
         gt_classes = self.get_str_classes(gt_classes)
-        self.predicted_classes = self.get_str_classes(self.predicted_classes)
+        if self.predictions_assigned:
+            self.predicted_classes = self.get_str_classes(self.predicted_classes)
         for i, im in enumerate(sal[:len(gt_classes),:,:]):
+            full_aug_mask = np.zeros((sal.shape[1], sal.shape[2]))
             found = True
             this_gt_box = gt_rois[i % len(gt_classes)]
             if self.predictions_assigned:
@@ -270,9 +296,10 @@ class DRISE():
                 else:
                     found = False
                     #missed detection
-            rgb_impath = self.map_4d_to_RGB(impath)
-            image = cv2.imread(rgb_impath)
-            image = cv2.rectangle(image, (this_gt_box[0], this_gt_box[1]), (this_gt_box[2], this_gt_box[3]), (0,255,0), 2)
+            #rgb_impath = self.map_4d_to_RGB(impath)
+            #image = cv2.imread(self.dataset.get_image_path(image_id))
+            image = cv2.rectangle(image, (this_gt_box[1], this_gt_box[0]), (this_gt_box[3], this_gt_box[2]), (0,255,0), 2)
+            print(this_gt_box)
             if found and self.predictions_assigned:
                 image = cv2.rectangle(image, (this_pred_box[0], this_pred_box[1]), (this_pred_box[2], this_pred_box[3]), (255,0,0), 2)
                 image_pred = np.copy(image)
@@ -285,35 +312,50 @@ class DRISE():
             plt.clf()
             if found and self.predictions_assigned:
                 plt.imshow(image_pred)
-                plt.imshow(sal[self.maxes[i]], cmap = 'jet', alpha = 0.5)
+                plt.imshow(sal[self.assignments[i]], cmap = 'jet', alpha = 0.5)
                 plt.colorbar()
                 plt.savefig('./saliency_map_'+str(i)+'_'+self.predicted_classes[i]+'_predictions')
                 plt.clf()
 
-                targ_im = im - sal[self.maxes[i]]
-                im_targ = sal[self.maxes[i]] - im
+                #plt.imshow(image_pred)
+                #plt.imshow(sal[self.maxes[i]], cmap = 'jet', alpha = 0.5)
+                #plt.colorbar()
+                #plt.savefig('./saliency_map_'+str(i)+'_'+self.predicted_classes[i]+'_predictions')
+                #plt.clf()
+
+                plt.imshow(image_pred)
+                plt.imshow(im - sal[self.assignments[i]], cmap = 'jet', alpha = 0.5)
+                plt.colorbar()
+                plt.savefig('./saliency_map_'+str(i)+'_'+self.predicted_classes[i]+'_predictions_im-targ')
+                plt.clf()
+                
+                aug_mask = im - sal[self.assignments[i]]
+                #new_range = [0.0,1.3]
+                #aug_mask = im - sal[self.assignments[i]]
+                #aug_mask = (aug_mask - np.min(aug_mask))/(np.max(aug_mask) - np.min(aug_mask))
+                #aug_mask = aug_mask * (new_range[1] - new_range[0]) + new_range[0]
+                full_aug_mask += aug_mask
+                #aug_mask = np.expand_dims(aug_mask,2)
+
+            else:
+                full_aug_mask += im
+
+
 
                 #np.save('./saliency_map_'+str(i)+'_gt_'+gt_classes[i]+'_pred_'+self.predicted_classes[i]+'im-targ', im_targ)
                 #np.save('./saliency_map_'+str(i)+'_gt_'+gt_classes[i]+'_pred_'+self.predicted_classes[i]+'targ-im', targ_im)
 
-                plt.imshow(targ_im)
-                plt.savefig('./saliency_map_'+'im'+str(ID)+'_map'+str(i)+'_gt-'+gt_classes[i]+'_pred-'+self.predicted_classes[i]+'targ-im')
 
-                plt.clf()
-
-                plt.imshow(im_targ)
-                plt.savefig('./saliency_map_'+'im'+str(ID)+'_map'+str(i)+'_gt-'+gt_classes[i]+'_pred-'+self.predicted_classes[i]+'im-targ')
-
-                plt.clf()
+        np.save(os.path.join('masks', str(image_id)), full_aug_mask)
 
 
     def explain_many(self, csv_path, prediction_saliencies = True, impaths = None, IDs = None):
         if impaths is None:
             for ID in IDs:
-                self.explain_one(csv_path, imID = ID, prediction_saliencies = prediction_saliencies)
+                self.explain_one(gt_csv_path=csv_path, imID = ID, prediction_saliencies = prediction_saliencies)
         elif IDs is None:
             for impath in impaths:
-                self.explain_one(csv_path, impath = impath, prediction_saliencies = prediction_saliencies)
+                self.explain_one(gt_csv_path=csv_path, impath = impath, prediction_saliencies = prediction_saliencies)
 
         else:
             print("SELECT EITHER A LIST OF IM IDS OR IMPATHS")
@@ -323,8 +365,10 @@ class DRISE():
 
 
 #self, input_size, num_masks, init_mask_res, mask_prob, model_weights, class_list_path
-weights = '../Mask_RCNN-master/logs/rgbd_10e_NoAug/mask_rcnn_rgbd_0009.h5'
+#weights = '../Mask_RCNN-master/logs/rgbd_10e_NoAug/mask_rcnn_rgbd_0009.h5'
+weights = os.path.join('../Mask_RCNN-master/', 'logs', 'rgb_5e_DRISE_reduced_100TS', 'mask_rcnn_rgbd_0004.h5')
 classes = '../classes.txt'
+classes = None
 csv_path = '../rgbd-dataset.csv'
 class InferenceConfig(RGBDConfig):
     GPU_COUNT = 1
@@ -335,15 +379,63 @@ config = InferenceConfig()
 
 print(ROOT_DIR)
 
-dataset_val = RGBDDataset()
-dataset_val.load_images(os.path.join(ROOT_DIR, '../data/val/'), config.IMAGE_SHAPE[0], config.IMAGE_SHAPE[1])
-dataset_val.prepare()
+dataset_train = RGBDDataset()
+dataset_train.load_images(os.path.join(ROOT_DIR, 'train.txt'), config.IMAGE_SHAPE[0], config.IMAGE_SHAPE[1])
+dataset_train.prepare()
+
+num_masks = 2000
+
+drise = DRISE([640,640], num_masks, 16, 0.5, weights,classes, dataset_train, config)
+#print(dataset_train.get_image_path(0))
+#drise.explain_one(csv_path, imID = 1, prediction_saliencies = True)
+all_ids = dataset_train.image_ids
+
+all_ids = [3, 7, 8, 9, 10, 11, 12, 16, 19, 20, 22, 26, 27, 30, 33, 35, 36, 37, 38, 40, 43, 44, 45, 46, 51, 52, 54, 56, 57, 59, 60, 61, 65, 69, 70, 71, 72, 73, 75, 77, 78, 79, 81, 82, 84, 87, 88, 89, 90, 91, 93, 96, 97, 98, 99, 100, 104, 105, 108, 109, 111, 115, 116, 117, 119, 120, 121, 122, 123, 126, 129, 130, 132, 133, 135, 138, 140, 143, 145, 146, 148, 152, 153, 155, 159, 161, 164, 166, 167, 168, 169, 170, 172, 174, 175, 179, 185, 186, 188, 189, 191, 193, 195, 196, 200, 202, 204, 205, 207, 208, 211, 212, 214, 216, 217, 218, 220, 222, 224, 231, 234, 235, 236, 237]
 
 
-drise = DRISE([640,640], 5000, 16, 0.5, weights,classes, dataset_val, config)
+"""
+clses = []
+insts = []
+insts_dict = {}
+ids_dict = {}
+for ids in all_ids[:240]:
+    impath = dataset_train.get_image_path(ids)
+    cls = impath.split('/')[5]
+    inst = impath.split('/')[6]
+    clses.append(cls)
+    insts.append(inst)
+    print(ids, impath)
+    ids_dict[impath] = ids
+    if inst not in insts_dict:
+        insts_dict[inst] = []
+    insts_dict[inst].append(impath)
+print(np.unique(clses, return_counts=True))
+clses_here  = np.unique(clses)
+insts_here = np.unique(insts)
+to_use = []
+for cls in clses_here:
+    done = []
+    for inst in insts_here:
+        if cls in inst:
+            num = inst.split('_')[-1]
+            if num in done:
+                continue
+            else:
+                to_use.append(insts_dict[inst][0])
+                done.append(num)
 
-#drise.explain_one(csv_path, imID = 0, prediction_saliencies = True)
+print(to_use)
+print(np.unique(to_use, return_counts=True))
+"""
 
-drise.explain_many(csv_path, IDs = [4,5], prediction_saliencies = True)
+all_ids = np.random.choice(all_ids, size = int(0.25*len(all_ids)), replace = False)
 
+drise.explain_many(csv_path, IDs = all_ids, prediction_saliencies = True)
+"""
+with open('./new_train.txt', 'w+') as f0:
 
+    for line in to_use:
+        f0.write(line+'\n')
+"""
+
+#np.save('path_to_id.npy', ids_dict)
