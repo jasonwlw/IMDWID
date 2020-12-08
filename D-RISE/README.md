@@ -31,4 +31,8 @@ https://github.com/eclique/RISE
   year = {2018}
 }
 
+Overview of the DRISE Augmentation method:
 
+<img src="/src/DRISE_Aug.png">
+
+The saliency maps are treated as masks; the image in the lower left is color augmented, the image in the middle is brightness augmented, and the image on the right is a combination of both augmentations. 
