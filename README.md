@@ -31,5 +31,7 @@ And below an example saliency map:
 
 <img src="/src/saliency_ex.png"/>
 
+The saliency map here is slightly off the object because we used a small s-parameter and small number of masks to increase efficiency.
+
 
 
