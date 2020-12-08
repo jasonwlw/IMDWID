@@ -89,7 +89,7 @@ class DRISE():
                 for line in f0.readlines():
                     self.class_list.append(line.strip())
         else:
-            self.class_list = os.listdir(os.path.join(ROOT_DIR,'../rgbd-dataset/'))
+            self.class_list = sorted(os.listdir(os.path.join(ROOT_DIR,'../rgbd-dataset/')))
         return 0
 
     def set_class_list(self, class_list):
@@ -103,6 +103,7 @@ class DRISE():
 
     def get_str_classes(self, class_ids):
         class_ids = class_ids.astype(int)
+        print(self.class_list)
         return np.asarray(self.class_list)[class_ids-1]
 
     def transform_gt_classes(self, classes):
@@ -133,7 +134,7 @@ class DRISE():
 
     def assign_predictions(self, gt_rois, gt_classes, results):
         # assign predictions to their respective targets
-        iou_thres = 0.3
+        iou_thres = 0.2
         iou = self.np_iou(gt_rois, results['rois'])
         print("GT", gt_rois)
         print("Pred", results['rois'])
@@ -229,7 +230,7 @@ class DRISE():
         return dots * norms
     
     def np_iou(self, tb1, tb2):
-        x11, y11, x12, y12 = np.split(tb1, 4, axis = 1)
+        y11, x11, y12, x12 = np.split(tb1, 4, axis = 1)
         # MRCNN still return in this form?
         y21, x21, y22, x22 = np.split(tb2, 4, axis = 1)
 
@@ -259,6 +260,7 @@ class DRISE():
             image_id = dataset.get_image_id(impath)
         elif imID is not None:
             impath = dataset.get_image_path(imID)
+            print(impath)
             image_id = imID
         else:
             print("Please select either one image or an image ID")
@@ -280,7 +282,7 @@ class DRISE():
         else:
             assignments = None
         #AP, precisions, recalls, overlaps = utils.compute_ap(gt_bbox, gt_class_id, gt_mask, results_noMask["rois"], results_noMask["class_ids"], results_noMask["scores"], results_noMask['masks'])
-
+        #gt_rois are y1, x2, y2, x2
         sal = self.compute_saliency(image, gt_rois, gt_classes)
         gt_classes = self.get_str_classes(gt_classes)
         if self.predictions_assigned:
@@ -298,23 +300,23 @@ class DRISE():
                     #missed detection
             #rgb_impath = self.map_4d_to_RGB(impath)
             #image = cv2.imread(self.dataset.get_image_path(image_id))
-            image = cv2.rectangle(image, (this_gt_box[1], this_gt_box[0]), (this_gt_box[3], this_gt_box[2]), (0,255,0), 2)
+            #image = cv2.rectangle(image, (this_gt_box[1], this_gt_box[0]), (this_gt_box[3], this_gt_box[2]), (0,255,0), 2)
             print(this_gt_box)
             if found and self.predictions_assigned:
-                image = cv2.rectangle(image, (this_pred_box[0], this_pred_box[1]), (this_pred_box[2], this_pred_box[3]), (255,0,0), 2)
+                #image = cv2.rectangle(image, (this_pred_box[1], this_pred_box[0]), (this_pred_box[3], this_pred_box[2]), (255,0,0), 2)
                 image_pred = np.copy(image)
 
             
             plt.imshow(image)
             plt.imshow(im, cmap='jet', alpha=0.5)
             plt.colorbar()
-            plt.savefig('./saliency_map_'+str(i)+'_'+gt_classes[i])
+            plt.savefig('./saliency_map_'+str(i)+'_'+gt_classes[i]+str(image_id)+'.png')
             plt.clf()
             if found and self.predictions_assigned:
                 plt.imshow(image_pred)
                 plt.imshow(sal[self.assignments[i]], cmap = 'jet', alpha = 0.5)
                 plt.colorbar()
-                plt.savefig('./saliency_map_'+str(i)+'_'+self.predicted_classes[i]+'_predictions')
+                plt.savefig('./saliency_map_'+str(i)+'_'+self.predicted_classes[i]+'_predictions'+str(image_id)+'.png')
                 plt.clf()
 
                 #plt.imshow(image_pred)
@@ -366,7 +368,7 @@ class DRISE():
 
 #self, input_size, num_masks, init_mask_res, mask_prob, model_weights, class_list_path
 #weights = '../Mask_RCNN-master/logs/rgbd_10e_NoAug/mask_rcnn_rgbd_0009.h5'
-weights = os.path.join('../Mask_RCNN-master/', 'logs', 'rgb_5e_DRISE_reduced_100TS', 'mask_rcnn_rgbd_0004.h5')
+weights = os.path.join('../Mask_RCNN-master/', 'logs', 'DRISE_40e_reduced_200TS', 'mask_rcnn_rgbd_0004.h5')
 classes = '../classes.txt'
 classes = None
 csv_path = '../rgbd-dataset.csv'
@@ -383,15 +385,14 @@ dataset_train = RGBDDataset()
 dataset_train.load_images(os.path.join(ROOT_DIR, 'train.txt'), config.IMAGE_SHAPE[0], config.IMAGE_SHAPE[1])
 dataset_train.prepare()
 
-num_masks = 2000
+num_masks = 1000
 
-drise = DRISE([640,640], num_masks, 16, 0.5, weights,classes, dataset_train, config)
+drise = DRISE([640,640], num_masks, 8, 0.5, weights,classes, dataset_train, config)
 #print(dataset_train.get_image_path(0))
-#drise.explain_one(csv_path, imID = 1, prediction_saliencies = True)
+#drise.explain_one(csv_path, imID = 35, prediction_saliencies = True)
 all_ids = dataset_train.image_ids
 
-all_ids = [3, 7, 8, 9, 10, 11, 12, 16, 19, 20, 22, 26, 27, 30, 33, 35, 36, 37, 38, 40, 43, 44, 45, 46, 51, 52, 54, 56, 57, 59, 60, 61, 65, 69, 70, 71, 72, 73, 75, 77, 78, 79, 81, 82, 84, 87, 88, 89, 90, 91, 93, 96, 97, 98, 99, 100, 104, 105, 108, 109, 111, 115, 116, 117, 119, 120, 121, 122, 123, 126, 129, 130, 132, 133, 135, 138, 140, 143, 145, 146, 148, 152, 153, 155, 159, 161, 164, 166, 167, 168, 169, 170, 172, 174, 175, 179, 185, 186, 188, 189, 191, 193, 195, 196, 200, 202, 204, 205, 207, 208, 211, 212, 214, 216, 217, 218, 220, 222, 224, 231, 234, 235, 236, 237]
-
+all_ids = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 14, 15, 16, 17, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 34, 35, 36, 37, 38, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 58, 59, 61, 62, 63, 64, 65, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 85, 86, 87, 89, 90, 91, 92, 93, 94, 95, 96, 98, 99, 100, 101, 102, 104, 105, 106, 107, 108, 109, 111, 112, 114, 115, 116, 117, 119, 120, 122, 123, 125, 126, 130, 131, 133, 134, 137, 138, 140, 141, 143, 145, 146, 147, 148, 149, 150, 152, 154, 155, 156, 157, 158, 161, 163, 164, 165, 166, 167, 168, 171, 173, 176, 178, 179, 180, 181, 182, 185, 186, 187, 188, 191, 192, 194, 196, 197, 201, 202, 203, 204, 205, 208, 209, 210, 211, 212, 213, 215, 216, 217, 218, 219, 220, 221, 223, 224, 225, 226, 227, 228, 229, 230, 234, 235, 236, 237, 238]
 
 """
 clses = []

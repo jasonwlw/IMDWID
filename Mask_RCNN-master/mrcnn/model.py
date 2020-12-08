@@ -1268,7 +1268,8 @@ def load_image_gt(dataset, config, image_id, augment=False, augmentation=None,
 
                 image = cv2.cvtColor(image, cv2.COLOR_RGB2HSV)
                 if hue:
-                    aug_range = [0,120]
+                    aug_range = [np.random.randint(-120,0), np.random.randint(1,120)]
+                    #aug_range = [0,120]
                     # Shift by either nothing or 120; 2 colors
                     saliency = ((saliency - np.min(saliency))/(np.max(saliency) - np.min(saliency))) * (aug_range[1] - aug_range[0]) + aug_range[0]
 
@@ -1296,8 +1297,8 @@ def load_image_gt(dataset, config, image_id, augment=False, augmentation=None,
             saliency = np.load(smpath_orig)
             # normalize saliencies
             if aug_range is None:
-                aug_range = np.random.randint(-120,120, size=2)
-                aug_range = sorted(aug_range)
+                aug_range = [np.random.randint(-120,0), np.random.randint(1,120)]
+                #aug_range = sorted(aug_range)
             conf = np.mean(saliency)
 
         
@@ -1309,7 +1310,9 @@ def load_image_gt(dataset, config, image_id, augment=False, augmentation=None,
 
                 image = cv2.cvtColor(image, cv2.COLOR_RGB2HSV)
                 if hue:
-                    aug_range = [0,120]
+                    low = np.random.randint(-120,0)
+                    high = np.random.randint(1,120)
+                    aug_range = [low,high]
                     # Shift by either nothing or 120; 2 colors
                     saliency = ((saliency - np.min(saliency))/(np.max(saliency) - np.min(saliency))) * (aug_range[1] - aug_range[0]) + aug_range[0]
 
