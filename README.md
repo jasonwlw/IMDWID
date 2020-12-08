@@ -33,5 +33,11 @@ And below an example saliency map:
 
 The saliency map here is slightly off the object because we used a small s-parameter and small number of masks to increase efficiency.
 
+We use these saliency maps to augment the image brightness and color, under the hypothesis that this will create more targeted augmentations instead of random ones. Results from our experiment comparing D-RISE Augmentation ("Guided Augmentation") to a Standard Augmentation are below:
+
+<img src="/src/Results.png"/>
+
+Interestingly although D-RISE augmentation does not reach a better solution, it does approach the solution faster, reaching a much lower mAP in 10 epochs than standard augmentation.
+
 
 
