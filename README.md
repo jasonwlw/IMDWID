@@ -23,4 +23,13 @@ Next, run rgbd_train.py uncommenting the DRISE augmentation (first model.train c
 
 Finally, run rgbd_train on the base model for 20 epochs and compare the results, being sure to check your results at 10 epochs. The DRISE augmentation method should converge faster than standard augmentation. 
 
+Below is a sample image of an apple from the rgbd-objects dataset:
+
+<img src="/src/apple_1_1_1.png"/>
+
+And below an example saliency map:
+
+<img src="/src/saliency_ex.png"/>
+
+
 
